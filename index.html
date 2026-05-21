@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stitch — door-to-door travel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #F1F2F4; color: #0B0F19; -webkit-font-smoothing: antialiased;
+  }
+  button, input { font-family: inherit; }
+  button { cursor: pointer; }
+  .hidden { display: none !important; }
+
+  /* top bar */
+  .topbar { background: #0B0F19; }
+  .topbar-in { max-width: 1100px; margin: 0 auto; padding: 13px 16px; display: flex; align-items: center; gap: 8px; }
+  .logo-mark { width: 28px; height: 28px; border-radius: 8px; background: #0770E3; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; }
+  .logo-text { font-size: 18px; font-weight: 800; color: #fff; }
+  .logo-sub { font-size: 12px; color: #6B7280; margin-left: 3px; }
+
+  /* hero */
+  .hero { background: linear-gradient(160deg, #0B0F19 0%, #142042 100%); padding-bottom: 80px; }
+  .hero-in { max-width: 720px; margin: 0 auto; padding: 40px 16px 0; }
+  .hero h1 { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -0.025em; line-height: 1.15; }
+  .hero p { font-size: 15px; color: #9AA6BC; margin-top: 8px; max-width: 480px; }
+
+  /* card */
+  .wrap { max-width: 720px; margin: -56px auto 0; padding: 0 16px 60px; }
+  .card { background: #fff; border: 1px solid #E6E8EB; border-radius: 18px; box-shadow: 0 12px 40px rgba(11,15,25,0.14); padding: 18px; }
+
+  /* place input */
+  .place-row { position: relative; }
+  .place-box { border: 1px solid #D7DBE0; border-radius: 12px; padding: 9px 12px; background: #fff; display: flex; align-items: center; gap: 10px; }
+  .place-box:focus-within { border-color: #0770E3; }
+  .dot { width: 9px; height: 9px; border-radius: 99px; background: #0B0F19; flex-shrink: 0; }
+  .diamond { width: 9px; height: 9px; background: #0770E3; transform: rotate(45deg); flex-shrink: 0; }
+  .place-label { font-size: 10px; font-weight: 700; color: #9AA1AB; letter-spacing: 0.05em; text-transform: uppercase; }
+  .place-input { border: none; outline: none; font-size: 14.5px; width: 100%; color: #0B0F19; background: transparent; padding: 0; }
+  .place-chosen { font-size: 14.5px; font-weight: 700; color: #0B0F19; }
+  .clear-btn { background: none; border: none; color: #9AA1AB; font-size: 16px; line-height: 1; padding: 2px 4px; }
+
+  /* dropdown */
+  .dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid #E6E8EB; border-radius: 12px; box-shadow: 0 12px 32px rgba(11,15,25,0.16); z-index: 40; overflow: hidden; max-height: 300px; overflow-y: auto; }
+  .gps-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 14px; background: #F5FAFF; border: none; border-bottom: 1px solid #E6EEF8; text-align: left; }
+  .gps-btn:hover { background: #EAF3FE; }
+  .gps-ic { width: 30px; height: 30px; border-radius: 8px; background: #0770E3; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sug { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 10px 14px; background: #fff; border: none; border-bottom: 1px solid #F3F4F6; text-align: left; }
+  .sug:last-child { border-bottom: none; }
+  .sug:hover { background: #F5FAFF; }
+  .sug-ic { width: 30px; height: 30px; border-radius: 8px; background: #F1F4F8; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .sug-name { font-size: 13.5px; font-weight: 600; color: #0B0F19; line-height: 1.3; }
+  .sug-sub { font-size: 11.5px; color: #6B7280; line-height: 1.3; margin-top: 1px; }
+  .dd-msg { padding: 14px 16px; font-size: 13px; color: #9AA1AB; }
+  .dd-spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid #C9D6E8; border-top-color: #0770E3; border-radius: 99px; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 7px; }
+
+  /* fields row */
+  .fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .field { border: 1px solid #D7DBE0; border-radius: 12px; padding: 8px 10px; background: #fff; }
+  .field-label { font-size: 10px; font-weight: 700; color: #9AA1AB; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 2px; }
+  .field select { border: none; outline: none; background: transparent; font-size: 13.5px; font-weight: 700; color: #0B0F19; width: 100%; }
+  .swap-btn { position: absolute; right: 8px; top: calc(50% - 15px); width: 30px; height: 30px; border-radius: 99px; background: #fff; border: 1px solid #D7DBE0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+
+  /* avoid chips */
+  .avoid-title { font-size: 12px; font-weight: 700; color: #374151; letter-spacing: 0.03em; text-transform: uppercase; margin: 16px 0 8px; }
+  .chips { display: flex; gap: 7px; flex-wrap: wrap; }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 99px; border: 1px solid #D7DBE0; background: #fff; color: #374151; font-size: 13px; font-weight: 600; }
+  .chip.on { background: #0B0F19; color: #fff; border-color: #0B0F19; }
+
+  .err { margin-top: 14px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 9px; padding: 9px 12px; font-size: 13px; color: #B91C1C; }
+
+  .cta { width: 100%; margin-top: 16px; background: #0770E3; color: #fff; font-size: 15px; font-weight: 700; padding: 14px; border-radius: 12px; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .cta:hover { background: #045CC0; }
+  .cta.secondary { background: #fff; color: #0770E3; border: 1px solid #C9D6E8; }
+  .cta.secondary:hover { background: #F5FAFF; }
+
+  .popular-title { font-size: 12px; font-weight: 700; color: #6B7280; letter-spacing: 0.04em; text-transform: uppercase; margin: 20px 0 8px; }
+  .pop-chip { background: #fff; border: 1px solid #E6E8EB; border-radius: 99px; padding: 8px 14px; font-size: 13px; color: #374151; font-weight: 600; margin-right: 8px; margin-bottom: 8px; }
+
+  /* results */
+  .results-head { background: #fff; border-bottom: 1px solid #E6E8EB; }
+  .results-head-in { max-width: 1100px; margin: 0 auto; padding: 14px 16px; }
+  .back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: #0770E3; font-weight: 600; background: none; border: none; margin-bottom: 6px; }
+  .route-title { font-size: 20px; font-weight: 800; color: #0B0F19; letter-spacing: -0.02em; }
+  .route-sub { font-size: 12.5px; color: #6B7280; margin-top: 2px; }
+
+  .results-wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
+  .tabs { background: #fff; border: 1px solid #E6E8EB; border-radius: 12px; display: flex; overflow: hidden; margin-bottom: 12px; }
+  .tab { flex: 1; text-align: left; padding: 11px 14px; background: #fff; border: none; border-right: 1px solid #EEF0F2; border-bottom: 2px solid transparent; }
+  .tab:last-child { border-right: none; }
+  .tab.active { background: #F5FAFF; border-bottom-color: #0770E3; }
+  .tab-label { font-size: 12.5px; font-weight: 700; color: #374151; }
+  .tab.active .tab-label { color: #0770E3; }
+  .tab-price { font-size: 15px; font-weight: 800; color: #0B0F19; margin-top: 1px; }
+  .tab-dur { font-size: 11.5px; color: #6B7280; }
+
+  .jcard { background: #fff; border: 1px solid #E6E8EB; border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+  .jcard:hover { box-shadow: 0 6px 20px rgba(11,15,25,0.08); border-color: #C9D6E8; }
+  .jhead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .jmode { display: flex; align-items: center; gap: 7px; }
+  .jmode-ic { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #fff; }
+  .jmode-name { font-size: 15px; font-weight: 800; }
+  .jtag { font-size: 10.5px; font-weight: 700; color: #0770E3; background: #EAF3FE; padding: 2px 7px; border-radius: 99px; }
+  .jtime { font-size: 12.5px; color: #6B7280; margin-top: 4px; }
+  .jprice { font-size: 22px; font-weight: 800; color: #0B0F19; text-align: right; }
+  .jprice-sub { font-size: 11.5px; color: #6B7280; text-align: right; }
+  .ribbon { display: flex; gap: 3px; margin-top: 13px; height: 30px; }
+  .rib { display: flex; align-items: center; justify-content: center; gap: 5px; color: #fff; font-size: 10.5px; font-weight: 600; }
+  .jstats { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+  .stat-label { font-size: 10px; color: #9AA1AB; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+  .stat-val { font-size: 13px; font-weight: 700; }
+  .legs { margin-top: 12px; border-top: 1px solid #EEF0F2; padding-top: 12px; }
+  .leg { display: flex; align-items: center; gap: 9px; padding: 5px 0; }
+  .leg-ic { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+  .leg-txt { font-size: 12.5px; color: #374151; font-weight: 600; flex: 1; }
+  .leg-from { color: #9AA1AB; font-weight: 400; }
+  .leg-dur { font-size: 12px; color: #6B7280; }
+  .leg-price { font-size: 12.5px; font-weight: 700; color: #0B0F19; min-width: 50px; text-align: right; }
+  .wait-leg { display: flex; align-items: center; gap: 9px; padding: 3px 0 3px 5px; }
+  .wait-bar { width: 2px; height: 16px; background: #E2C9A0; }
+  .wait-txt { font-size: 11.5px; color: #B45309; font-style: italic; }
+  .empty { background: #fff; border: 1px solid #E6E8EB; border-radius: 12px; padding: 40px 20px; text-align: center; }
+
+  /* loading */
+  .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; padding: 24px; }
+  .spinner { width: 60px; height: 60px; border: 3px solid #0770E3; border-top-color: transparent; border-radius: 99px; animation: spin 1s linear infinite; margin-bottom: 24px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 520px) { .fields { grid-template-columns: 1fr; } .hero h1 { font-size: 27px; } }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+/* =====================================================================
+   STITCH — door-to-door travel planner (real, deployable)
+   Live location search via OpenStreetMap Nominatim (free, no key).
+   Real "use my location" via the browser Geolocation API.
+   ===================================================================== */
+
+// ---------- STATE ----------
+var STATE = {
+  screen: 'search',
+  from: null,   // {name, sub, lat, lng}
+  to: null,
+  date: 'Tomorrow',
+  time: '10:00',
+  pax: 1,
+  avoid: [],
+  journeys: [],
+  sort: 'best',
+};
+
+// ---------- HELPERS ----------
+function inr(n){ return '\u20B9' + Math.round(n).toLocaleString('en-IN'); }
+function durFmt(m){ m = Math.round(m); return Math.floor(m/60) + 'h ' + String(m%60).padStart(2,'0') + 'm'; }
+function minOf(t){ var p=t.split(':'); return (+p[0])*60 + (+p[1]); }
+function addMin(t, mins){
+  var tot = (minOf(t) + Math.round(mins)) % 1440; if (tot<0) tot += 1440;
+  return String(Math.floor(tot/60)).padStart(2,'0') + ':' + String(tot%60).padStart(2,'0');
+}
+// distance between two lat/lng in km (haversine)
+function distKm(a, b){
+  var R=6371, toRad=function(d){return d*Math.PI/180;};
+  var dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng);
+  var s = Math.sin(dLat/2)*Math.sin(dLat/2) +
+          Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1-s));
+}
+
+var MODE_COLOR = { flight:'#0770E3', cab:'#111827', auto:'#7C3AED', bus:'#B45309', train:'#15803D', wait:'#E2C9A0' };
+var MODE_GLYPH = { flight:'\u2708', cab:'\uD83D\uDE97', auto:'\uD83D\uDEFA', bus:'\uD83D\uDE8C', train:'\uD83D\uDE86' };
+
+// ---------- INDIA AIRPORTS (major) ----------
+var AIRPORTS = [
+  { iata:'BLR', name:'Kempegowda Intl Airport', city:'Bengaluru', lat:13.1986, lng:77.7066 },
+  { iata:'BOM', name:'Chhatrapati Shivaji Maharaj Intl', city:'Mumbai', lat:19.0896, lng:72.8656 },
+  { iata:'DEL', name:'Indira Gandhi Intl Airport', city:'Delhi', lat:28.5562, lng:77.1000 },
+  { iata:'MAA', name:'Chennai Intl Airport', city:'Chennai', lat:12.9941, lng:80.1709 },
+  { iata:'HYD', name:'Rajiv Gandhi Intl Airport', city:'Hyderabad', lat:17.2403, lng:78.4294 },
+  { iata:'CCU', name:'Netaji Subhas Chandra Bose Intl', city:'Kolkata', lat:22.6547, lng:88.4467 },
+  { iata:'GOX', name:'Manohar Intl Airport (Mopa)', city:'Goa', lat:15.7360, lng:73.8580 },
+  { iata:'GOI', name:'Dabolim Airport', city:'Goa', lat:15.3808, lng:73.8314 },
+  { iata:'COK', name:'Cochin Intl Airport', city:'Kochi', lat:10.1520, lng:76.4019 },
+  { iata:'PNQ', name:'Pune Airport', city:'Pune', lat:18.5793, lng:73.9089 },
+  { iata:'AMD', name:'Sardar Vallabhbhai Patel Intl', city:'Ahmedabad', lat:23.0772, lng:72.6347 },
+  { iata:'JAI', name:'Jaipur Intl Airport', city:'Jaipur', lat:26.8242, lng:75.8122 },
+  { iata:'LKO', name:'Chaudhary Charan Singh Intl', city:'Lucknow', lat:26.7606, lng:80.8893 },
+  { iata:'PAT', name:'Jay Prakash Narayan Airport', city:'Patna', lat:25.5913, lng:85.0880 },
+  { iata:'IXC', name:'Chandigarh Airport', city:'Chandigarh', lat:30.6735, lng:76.7885 },
+  { iata:'TRV', name:'Trivandrum Intl Airport', city:'Thiruvananthapuram', lat:8.4821, lng:76.9200 },
+  { iata:'BBI', name:'Biju Patnaik Intl Airport', city:'Bhubaneswar', lat:20.2444, lng:85.8178 },
+  { iata:'NAG', name:'Dr. Babasaheb Ambedkar Intl', city:'Nagpur', lat:21.0922, lng:79.0472 },
+  { iata:'IXM', name:'Madurai Airport', city:'Madurai', lat:9.8345, lng:78.0934 },
+  { iata:'VNS', name:'Lal Bahadur Shastri Airport', city:'Varanasi', lat:25.4524, lng:82.8593 }
+];
+// ---------- INDIA MAJOR RAILWAY STATIONS ----------
+var STATIONS = [
+  { code:'SBC', name:'KSR Bengaluru City Jn', city:'Bengaluru', lat:12.9783, lng:77.5710 },
+  { code:'YPR', name:'Yesvantpur Jn', city:'Bengaluru', lat:13.0236, lng:77.5520 },
+  { code:'CSMT', name:'Chhatrapati Shivaji Maharaj Term', city:'Mumbai', lat:18.9398, lng:72.8355 },
+  { code:'DR',  name:'Dadar', city:'Mumbai', lat:19.0190, lng:72.8425 },
+  { code:'NDLS',name:'New Delhi', city:'Delhi', lat:28.6431, lng:77.2197 },
+  { code:'MAS', name:'MGR Chennai Central', city:'Chennai', lat:13.0827, lng:80.2755 },
+  { code:'SC',  name:'Secunderabad Jn', city:'Hyderabad', lat:17.4344, lng:78.5013 },
+  { code:'HWH', name:'Howrah Jn', city:'Kolkata', lat:22.5839, lng:88.3425 },
+  { code:'MAO', name:'Madgaon Jn', city:'Goa', lat:15.2730, lng:73.9636 },
+  { code:'ERS', name:'Ernakulam Jn', city:'Kochi', lat:9.9700, lng:76.2870 },
+  { code:'PUNE',name:'Pune Jn', city:'Pune', lat:18.5286, lng:73.8742 },
+  { code:'ADI', name:'Ahmedabad Jn', city:'Ahmedabad', lat:23.0265, lng:72.6010 },
+  { code:'JP',  name:'Jaipur Jn', city:'Jaipur', lat:26.9197, lng:75.7878 },
+  { code:'LKO', name:'Lucknow Charbagh', city:'Lucknow', lat:26.8310, lng:80.9220 },
+  { code:'PNBE',name:'Patna Jn', city:'Patna', lat:25.6020, lng:85.1376 },
+  { code:'NGP', name:'Nagpur Jn', city:'Nagpur', lat:21.1530, lng:79.0928 },
+  { code:'BBS', name:'Bhubaneswar', city:'Bhubaneswar', lat:20.2700, lng:85.8400 },
+  { code:'BSB', name:'Varanasi Jn', city:'Varanasi', lat:25.3270, lng:82.9870 }
+];
+// find nearest entry in a list to a given lat/lng point
+function nearest(list, point){
+  var best = null, bestD = Infinity;
+  for (var i=0;i<list.length;i++){
+    var d = distKm(point, list[i]);
+    if (d < bestD){ bestD = d; best = list[i]; }
+  }
+  return { item: best, km: bestD };
+}
+
+// ---------- REAL BOOKING DEEP LINKS (no API key needed) ----------
+function uberLink(fromPt, toPt){
+  return 'https://m.uber.com/looking?drop[0]=' +
+    encodeURIComponent(JSON.stringify({ latitude:toPt.lat, longitude:toPt.lng, addressLine1:toPt.name||'' })) +
+    '&pickup=' +
+    encodeURIComponent(JSON.stringify({ latitude:fromPt.lat, longitude:fromPt.lng, addressLine1:fromPt.name||'' }));
+}
+function olaLink(fromPt, toPt){
+  return 'https://book.olacabs.com/?lat=' + fromPt.lat + '&lng=' + fromPt.lng +
+    '&drop_lat=' + toPt.lat + '&drop_lng=' + toPt.lng;
+}
+function skyscannerLink(fromIata, toIata){
+  // Skyscanner search URL: /transport/flights/FROM/TO/
+  return 'https://www.skyscanner.co.in/transport/flights/' +
+    (fromIata||'').toLowerCase() + '/' + (toIata||'').toLowerCase() + '/';
+}
+function irctcLink(){ return 'https://www.irctc.co.in/nget/train-search'; }
+function redbusLink(fromCity, toCity){
+  return 'https://www.redbus.in/bus-tickets/' +
+    encodeURIComponent((fromCity||'').toLowerCase().replace(/\s+/g,'-')) + '-to-' +
+    encodeURIComponent((toCity||'').toLowerCase().replace(/\s+/g,'-'));
+}
+
+// ---------- FARE MODEL (calibrated to real India rates) ----------
+// 52km cab ~ Rs 1,260 ; 52km auto ~ Rs 770
+var CAB_RATE = { cab:{base:120, perKm:22, kmph:34}, auto:{base:40, perKm:14, kmph:30} };
+function groundFare(km, mode){ var r=CAB_RATE[mode]; return Math.round((r.base + km*r.perKm)/10)*10; }
+function groundTime(km, mode){ return Math.round((km/CAB_RATE[mode].kmph)*60 + 8); }
+
+// ---------- CLASS OPTIONS (user-editable per leg) ----------
+// each option has a price multiplier relative to the base estimate
+var CLASS_OPTIONS = {
+  cab:   [ {id:'auto',  label:'Auto',          mult:0.55},
+           {id:'mini',  label:'Mini / Hatch',  mult:0.85},
+           {id:'sedan', label:'Sedan',         mult:1.00},
+           {id:'suv',   label:'SUV / Prime',   mult:1.35} ],
+  train: [ {id:'SL',  label:'Sleeper (SL)',    mult:0.28},
+           {id:'3A',  label:'3rd AC (3A)',     mult:0.66},
+           {id:'2A',  label:'2nd AC (2A)',     mult:1.00},
+           {id:'1A',  label:'1st AC (1A)',     mult:1.65} ],
+  bus:   [ {id:'seater', label:'Seater (Non-AC)',  mult:0.55},
+           {id:'seatac', label:'Seater A/C',       mult:0.78},
+           {id:'sleeper',label:'Sleeper A/C',      mult:1.00},
+           {id:'volvo',  label:'Volvo Multi-Axle', mult:1.25} ],
+  flight:[ {id:'eco',  label:'Economy',        mult:1.00},
+           {id:'prem', label:'Premium Economy',mult:1.55},
+           {id:'biz',  label:'Business',       mult:2.8} ]
+};
+
+// tight price RANGE — max 10% spread, low to high
+function priceRange(estimate){
+  var low  = Math.round(estimate * 0.96 / 10) * 10;   // -4%
+  var high = Math.round(estimate * 1.05 / 10) * 10;   // +5%  -> ~9% spread
+  return { low: low, high: high };
+}
+function rangeStr(estimate){
+  var r = priceRange(estimate);
+  return inr(r.low) + ' \u2013 ' + inr(r.high);
+}
+
+// ---------- LIVE LOCATION SEARCH (OpenStreetMap Nominatim) ----------
+var searchTimer = null;
+function liveSearch(query, onResult){
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(function(){
+    var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=7&countrycodes=in&q=' + encodeURIComponent(query);
+    fetch(url, { headers: { 'Accept':'application/json' } })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var places = data.map(function(d){
+          var a = d.address || {};
+          var main = d.name || (d.display_name.split(',')[0]);
+          var locality = a.suburb || a.neighbourhood || a.city || a.town || a.village || a.state_district || a.county || '';
+          var region = a.state || a.country || '';
+          var sub = [locality, region].filter(Boolean).join(', ');
+          return { name: main, sub: sub || d.display_name, lat: parseFloat(d.lat), lng: parseFloat(d.lon) };
+        });
+        onResult(places);
+      })
+      .catch(function(){ onResult(null); });
+  }, 320);
+}
+
+// reverse geocode for GPS "use my location"
+function reverseGeocode(lat, lng, cb){
+  // zoom=18 asks Nominatim for building-level detail
+  var url = 'https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&zoom=18&lat=' + lat + '&lon=' + lng;
+  fetch(url, { headers: { 'Accept':'application/json' } })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var a = d.address || {};
+      // most specific first: building name, then house+road, then road, then area
+      var main = a.building || a.amenity || a.shop || a.office
+              || (a.house_number && a.road ? (a.house_number + ' ' + a.road) : null)
+              || a.road || a.neighbourhood || a.suburb || a.village || a.town || a.city
+              || 'My current location';
+      var bits = [a.suburb || a.neighbourhood, a.city || a.town || a.village, a.state]
+                 .filter(Boolean);
+      // de-duplicate (avoid "Karnataka, Karnataka")
+      var seen = {}, sub = bits.filter(function(x){ if(seen[x]) return false; seen[x]=1; return true; }).join(', ');
+      cb({ name: main, sub: sub || 'Detected by GPS', lat: lat, lng: lng });
+    })
+    .catch(function(){ cb({ name:'My current location', sub:'Detected by GPS', lat:lat, lng:lng }); });
+}
+
+// ===================================================================
+//  RENDER
+// ===================================================================
+function render(){
+  var root = document.getElementById('app');
+  if (STATE.screen === 'search')  root.innerHTML = searchHTML();
+  if (STATE.screen === 'loading') root.innerHTML = loadingHTML();
+  if (STATE.screen === 'results') root.innerHTML = resultsHTML();
+  if (STATE.screen === 'detail')  root.innerHTML = detailHTML();
+  wire();
+}
+
+function topbar(){
+  return '<div class="topbar"><div class="topbar-in">' +
+    '<div class="logo-mark">S</div><div class="logo-text">Stitch</div>' +
+    '<div class="logo-sub">door-to-door travel</div></div></div>';
+}
+
+// ---------- SEARCH SCREEN ----------
+function searchHTML(){
+  var avoidModes = [['flight','Flight','\u2708'],['train','Train','\uD83D\uDE86'],['bus','Bus','\uD83D\uDE8C'],['cab','Cab','\uD83D\uDE97'],['auto','Auto','\uD83D\uDEFA']];
+  var chips = avoidModes.map(function(m){
+    var on = STATE.avoid.indexOf(m[0]) >= 0;
+    return '<button class="chip' + (on?' on':'') + '" data-avoid="' + m[0] + '">' + m[2] + ' ' + m[1] + (on?' \u2715':'') + '</button>';
+  }).join('');
+
+  return topbar() +
+    '<div class="hero"><div class="hero-in">' +
+      '<h1>The whole trip, door to door.</h1>' +
+      '<p>Type your exact starting point \u2014 a building, street or landmark. Stitch finds it live, then compares flight, train and bus journeys, each stitched with your cabs.</p>' +
+    '</div></div>' +
+    '<div class="wrap"><div class="card">' +
+      '<div style="position:relative">' +
+        placeFieldHTML('from','FROM \u2014 your exact location','Where are you starting from?') +
+        '<div style="height:10px"></div>' +
+        placeFieldHTML('to','TO \u2014 where you\u2019re going','Where do you want to go?') +
+        '<button class="swap-btn" id="swapBtn" title="Swap">\u21C5</button>' +
+      '</div>' +
+      '<div class="fields">' +
+        '<div class="field"><div class="field-label">Date</div><select id="dateSel">' +
+          ['Today','Tomorrow','Day after'].map(function(d){return '<option'+(d===STATE.date?' selected':'')+'>'+d+'</option>';}).join('') +
+        '</select></div>' +
+        '<div class="field"><div class="field-label">Leave around</div><select id="timeSel">' +
+          ['06:00','08:00','10:00','12:00','15:00','18:00','21:00'].map(function(t){return '<option'+(t===STATE.time?' selected':'')+'>'+t+'</option>';}).join('') +
+        '</select></div>' +
+        '<div class="field"><div class="field-label">Travellers</div><select id="paxSel">' +
+          [1,2,3,4,5,6].map(function(n){return '<option value="'+n+'"'+(n===STATE.pax?' selected':'')+'>'+n+(n===1?' person':' people')+'</option>';}).join('') +
+        '</select></div>' +
+      '</div>' +
+      '<div class="avoid-title">Avoid any modes? <span style="color:#9AA1AB;font-weight:500;text-transform:none;letter-spacing:0">optional</span></div>' +
+      '<div class="chips">' + chips + '</div>' +
+      '<div id="errBox"></div>' +
+      '<button class="cta" id="searchBtn">\uD83D\uDD0D Plan my journey</button>' +
+    '</div>' +
+    '<div class="popular-title">Try a popular route</div>' +
+    '<div>' +
+      '<button class="pop-chip" data-pop="ecgoa">\uD83E\uDDED Electronic City \u2192 Goa</button>' +
+      '<button class="pop-chip" data-pop="koramum">\uD83E\uDDED Koramangala \u2192 Mumbai</button>' +
+    '</div>' +
+    '</div>';
+}
+
+function placeFieldHTML(which, label, placeholder){
+  var val = STATE[which];
+  var inner;
+  if (val){
+    inner = '<div class="dot' + (which==='to'?' diamond':'') + '"></div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="place-label">' + label + '</div>' +
+        '<div class="place-chosen">' + esc(val.name) + '</div>' +
+        '<div class="sug-sub">' + esc(val.sub || '') + '</div>' +
+      '</div>' +
+      '<button class="clear-btn" data-clear="' + which + '">\u2715</button>';
+  } else {
+    inner = '<div class="dot' + (which==='to'?' diamond':'') + '"></div>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="place-label">' + label + '</div>' +
+        '<input class="place-input" id="input_' + which + '" data-place="' + which + '" placeholder="' + placeholder + '" autocomplete="off" />' +
+      '</div>';
+  }
+  return '<div class="place-row"><div class="place-box">' + inner + '</div>' +
+    '<div class="dropdown hidden" id="dd_' + which + '"></div></div>';
+}
+
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+
+// ---------- LOADING ----------
+function loadingHTML(){
+  return topbar() +
+    '<div class="loading">' +
+      '<div class="spinner"></div>' +
+      '<div style="font-size:18px;font-weight:800">' + esc(STATE.from.name) + ' \u2192 ' + esc(STATE.to.name) + '</div>' +
+      '<div style="font-size:13px;color:#6B7280;margin-top:6px">Building your door-to-door journeys\u2026</div>' +
+    '</div>';
+}
+
+// ---------- RESULTS ----------
+function resultsHTML(){
+  var js = STATE.journeys;
+  var head = topbar() +
+    '<div class="results-head"><div class="results-head-in">' +
+      '<button class="back-link" id="editSearch">\u2190 Edit search</button>' +
+      '<div class="route-title">' + esc(STATE.from.name) + ' \u2192 ' + esc(STATE.to.name) + '</div>' +
+      '<div class="route-sub">' + STATE.date + ' \u00B7 ' + STATE.pax + (STATE.pax===1?' traveller':' travellers') +
+        (STATE.avoid.length? ' \u00B7 avoiding ' + STATE.avoid.join(', ') : '') +
+        ' \u00B7 ' + js.length + ' journeys</div>' +
+    '</div></div>';
+
+  if (!js.length){
+    return head + '<div class="results-wrap"><div class="empty">' +
+      '<div style="font-size:15px;font-weight:700">No journeys found</div>' +
+      '<div style="font-size:13px;color:#6B7280;margin-top:4px">Try removing some avoided modes, or pick a different destination.</div>' +
+      '</div></div>';
+  }
+
+  // sort tabs
+  function pick(key){
+    var a = js.slice();
+    if (key==='cheapest') a.sort(function(x,y){return x.totalPrice-y.totalPrice;});
+    else if (key==='fastest') a.sort(function(x,y){return x.totalMin-y.totalMin;});
+    else a.sort(function(x,y){return (x.totalPrice+x.totalMin*14)-(y.totalPrice+y.totalMin*14);});
+    return a[0];
+  }
+  var tabs = ['best','cheapest','fastest'].map(function(k){
+    var j = pick(k);
+    var label = k.charAt(0).toUpperCase()+k.slice(1);
+    return '<button class="tab' + (STATE.sort===k?' active':'') + '" data-sort="' + k + '">' +
+      '<div class="tab-label">' + label + '</div>' +
+      '<div class="tab-price">' + inr(j.totalPrice) + '</div>' +
+      '<div class="tab-dur">' + MODE_GLYPH[j.primaryMode] + ' ' + durFmt(j.totalMin) + '</div>' +
+    '</button>';
+  }).join('');
+
+  // sorted list
+  var sorted = js.slice();
+  if (STATE.sort==='cheapest') sorted.sort(function(x,y){return x.totalPrice-y.totalPrice;});
+  else if (STATE.sort==='fastest') sorted.sort(function(x,y){return x.totalMin-y.totalMin;});
+  else sorted.sort(function(x,y){return (x.totalPrice+x.totalMin*14)-(y.totalPrice+y.totalMin*14);});
+
+  var cards = sorted.map(function(j, idx){ return journeyCardHTML(j, idx); }).join('');
+
+  return head + '<div class="results-wrap"><div class="tabs">' + tabs + '</div>' + cards + '</div>';
+}
+
+function journeyCardHTML(j, idx){
+  var moving = j.legs.filter(function(l){return l.mode!=='wait';});
+  var totalMoving = moving.reduce(function(s,l){return s+l.durMin;},0);
+  var primary = j.legs.filter(function(l){return l.mode===j.primaryMode;})[0];
+  var tagLabel = { flight:'Fastest overall', train:'Sleep on board', bus:'Lowest cost' }[j.primaryMode];
+
+  var ribbon = moving.map(function(l,i){
+    var pct = Math.max(12, (l.durMin/totalMoving)*100);
+    var radius = i===0 ? '7px 2px 2px 7px' : (i===moving.length-1 ? '2px 7px 7px 2px' : '2px');
+    return '<div class="rib" style="width:' + pct + '%;background:' + MODE_COLOR[l.mode] + ';border-radius:' + radius + '">' +
+      MODE_GLYPH[l.mode] + (pct>26 ? (' ' + durFmt(l.durMin)) : '') + '</div>';
+  }).join('');
+
+  var legRows = j.legs.map(function(l){
+    if (l.mode==='wait'){
+      return '<div class="wait-leg"><div class="wait-bar"></div>' +
+        '<div class="wait-txt">' + esc(l.label) + ' \u00B7 ' + durFmt(l.durMin) + '</div></div>';
+    }
+    return '<div class="leg">' +
+      '<div class="leg-ic" style="background:' + MODE_COLOR[l.mode] + '">' + MODE_GLYPH[l.mode] + '</div>' +
+      '<div class="leg-txt">' + esc(l.provider) + ' <span class="leg-from">\u00B7 ' + esc(l.from) + ' \u2192 ' + esc(l.to) + '</span></div>' +
+      '<div class="leg-dur">' + durFmt(l.durMin) + '</div>' +
+      '<div class="leg-price">' + (l.price>0?inr(l.price):'\u2014') + '</div>' +
+    '</div>';
+  }).join('');
+
+  return '<div class="jcard">' +
+    '<div class="jhead">' +
+      '<div><div class="jmode">' +
+        '<div class="jmode-ic" style="background:' + MODE_COLOR[j.primaryMode] + '">' + MODE_GLYPH[j.primaryMode] + '</div>' +
+        '<div class="jmode-name">' + (j.primaryMode==='flight'?esc(primary.provider):(j.primaryMode==='train'?'By train':'By bus')) + '</div>' +
+        '<div class="jtag">' + tagLabel + '</div>' +
+      '</div>' +
+      '<div class="jtime">Leave ' + j.startTime + ' \u2192 arrive ' + j.endTime +
+        (minOf(j.endTime)<minOf(j.startTime)?' <span style="color:#B45309">(next day)</span>':'') + '</div></div>' +
+      '<div><div class="jprice" style="font-size:17px">' + rangeStr(j.totalPrice) + '</div><div class="jprice-sub">est. all-in, door to door</div></div>' +
+    '</div>' +
+    '<div class="ribbon">' + ribbon + '</div>' +
+    '<div class="jstats">' +
+      statHTML('Total time', durFmt(j.totalMin), '#0B0F19') +
+      statHTML('Moving', durFmt(j.movingMin), '#0B0F19') +
+      statHTML('Waiting / transit', durFmt(j.transitMin), '#B45309') +
+    '</div>' +
+    '<div class="legs">' + legRows + '</div>' +
+    '<button class="cta" data-detail="' + idx + '" style="margin-top:13px;font-size:13.5px;padding:11px">See full journey &amp; book \u2192</button>' +
+  '</div>';
+}
+function statHTML(label, val, color){
+  return '<div><div class="stat-label">' + label + '</div>' +
+    '<div class="stat-val" style="color:' + color + '">' + val + '</div></div>';
+}
+
+// ---------- DETAIL ----------
+function detailHTML(){
+  var j = STATE.detailJourney;
+  var moving = j.legs.filter(function(l){return l.mode!=='wait';});
+  var legRows = j.legs.map(function(l){
+    if (l.mode==='wait'){
+      return '<div style="display:flex;gap:12px;margin-bottom:10px">' +
+        '<div style="width:40px;display:flex;justify-content:center"><div style="width:2px;min-height:34px;background:#E2C9A0"></div></div>' +
+        '<div style="flex:1;display:flex;align-items:center;gap:8px;background:#FFF8EC;border:1px dashed #E2C9A0;border-radius:10px;padding:10px 14px">' +
+          '\u23F3 <span style="font-size:12.5px;color:#92500C;font-weight:600">' + esc(l.label) + '</span>' +
+          '<span style="font-size:12px;color:#B45309;margin-left:auto">' + durFmt(l.durMin) + ' wait</span>' +
+        '</div></div>';
+    }
+    var bookOn = l.bookLabel || (l.mode==='flight'?'Skyscanner':(l.mode==='train'?'IRCTC':(l.mode==='bus'?'RedBus':'Uber')));
+    var bookUrl = l.book || '#';
+    var legIdx = j.legs.indexOf(l);
+    // class selector (only if this leg has class options)
+    var classSelector = '';
+    if (l.classKey && CLASS_OPTIONS[l.classKey]){
+      var opts = CLASS_OPTIONS[l.classKey].map(function(o){
+        return '<option value="' + o.id + '"' + (o.id===l.classId?' selected':'') + '>' + esc(o.label) + '</option>';
+      }).join('');
+      var labelTxt = l.classKey==='cab' ? 'Vehicle type' : (l.classKey==='train' ? 'Coach class' : (l.classKey==='bus' ? 'Bus type' : 'Cabin'));
+      classSelector =
+        '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+          '<span style="font-size:11px;font-weight:700;color:#9AA1AB;text-transform:uppercase;letter-spacing:0.04em">' + labelTxt + '</span>' +
+          '<select class="leg-class-sel" data-leg="' + legIdx + '" ' +
+            'style="border:1px solid #D7DBE0;border-radius:8px;padding:5px 8px;font-size:12.5px;font-weight:600;color:#0B0F19;background:#fff">' +
+            opts +
+          '</select>' +
+        '</div>';
+    }
+    return '<div style="display:flex;gap:12px;margin-bottom:10px">' +
+      '<div style="display:flex;flex-direction:column;align-items:center;width:40px;padding-top:3px">' +
+        '<div style="font-size:11px;font-weight:700">' + l.depTime + '</div>' +
+        '<div class="leg-ic" style="width:34px;height:34px;border-radius:99px;background:' + MODE_COLOR[l.mode] + ';margin:5px 0;font-size:14px">' + MODE_GLYPH[l.mode] + '</div>' +
+        '<div style="font-size:11px;color:#6B7280">' + l.arrTime + '</div>' +
+      '</div>' +
+      '<div style="flex:1;background:#fff;border:1px solid #E6E8EB;border-radius:12px;padding:14px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+          '<div><div style="font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:' + MODE_COLOR[l.mode] + '">' +
+            l.mode + ' \u00B7 ' + durFmt(l.durMin) + '</div>' +
+            '<div style="font-size:15px;font-weight:700;margin-top:2px">' + esc(l.provider) + '</div>' +
+            (l.sub?'<div style="font-size:12.5px;color:#6B7280">' + esc(l.sub) + '</div>':'') +
+          '</div>' +
+          '<div style="text-align:right"><div style="font-size:15px;font-weight:800">' + rangeStr(l.price) + '</div>' +
+          '<div style="font-size:10px;color:#9AA1AB">estimated</div></div></div>' +
+        '<div style="margin-top:10px;font-size:12.5px;color:#374151">\u25CF ' + esc(l.from) + '</div>' +
+        '<div style="margin-top:4px;font-size:12.5px;color:#374151">\u25C6 ' + esc(l.to) + '</div>' +
+        classSelector +
+        '<a href="' + bookUrl + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:4px;margin-top:12px;font-size:12.5px;font-weight:700;color:#fff;background:#0B0F19;padding:7px 13px;border-radius:7px;text-decoration:none">Book on ' + bookOn + ' \u2197</a>' +
+      '</div></div>';
+  }).join('');
+
+  return topbar() +
+    '<div style="max-width:720px;margin:0 auto;padding:20px 16px 40px">' +
+      '<button class="back-link" id="backResults">\u2190 Back to journeys</button>' +
+      '<div style="background:#fff;border:1px solid #E6E8EB;border-radius:18px;padding:20px;margin-bottom:16px">' +
+        '<div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#6B7280;text-transform:uppercase">Your door-to-door trip</div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px;margin-top:4px">' +
+          '<div style="font-size:21px;font-weight:800;letter-spacing:-0.02em">' + esc(STATE.from.name) + ' \u2192 ' + esc(STATE.to.name) + '</div>' +
+          '<div style="text-align:right"><div style="font-size:20px;font-weight:800">' + rangeStr(j.totalPrice) + '</div>' +
+          '<div style="font-size:12.5px;color:#6B7280">' + durFmt(j.totalMin) + ' total \u00B7 est.</div></div>' +
+        '</div>' +
+        '<div style="font-size:13px;color:#6B7280;margin-top:2px">Leave ' + j.startTime + ' \u00B7 arrive ' + j.endTime + '</div>' +
+        '<div class="jstats" style="margin-top:14px">' +
+          statHTML('Total time', durFmt(j.totalMin), '#0B0F19') +
+          statHTML('Moving', durFmt(j.movingMin), '#0B0F19') +
+          statHTML('Waiting / transit', durFmt(j.transitMin), '#B45309') +
+        '</div>' +
+      '</div>' +
+      legRows +
+      '<button class="cta" style="margin-top:6px">Book all ' + moving.length + ' legs \u00B7 ' + rangeStr(j.totalPrice) + '</button>' +
+    '</div>';
+}
+
+// ===================================================================
+//  JOURNEY BUILDER  (uses real distances from chosen lat/lng)
+// ===================================================================
+function buildJourneys(){
+  var from = STATE.from, to = STATE.to, avoid = STATE.avoid;
+  var crow = distKm(from, to);                 // straight-line distance
+  var roadKm = crow * 1.25;                    // rough road factor
+  var journeys = [];
+
+  // find the REAL nearest airport & station to each end
+  var depAir = nearest(AIRPORTS, from);
+  var arrAir = nearest(AIRPORTS, to);
+  var depStn = nearest(STATIONS, from);
+  var arrStn = nearest(STATIONS, to);
+
+  function groundLeg(km, provider, fromPt, toPt){
+    var mode = 'cab';
+    if (avoid.indexOf('cab')>=0 && avoid.indexOf('auto')<0) mode='auto';
+    if (avoid.indexOf('cab')>=0 && avoid.indexOf('auto')>=0) return null;
+    var prov = mode==='cab' ? provider : 'Rapido Auto';
+    // base estimate is for a Sedan; user can change class on the detail page
+    var base = groundFare(km, 'cab');
+    var classId = mode==='auto' ? 'auto' : 'sedan';
+    var optMult = 1;
+    CLASS_OPTIONS.cab.forEach(function(o){ if(o.id===classId) optMult=o.mult; });
+    return { mode:mode, provider:prov,
+             from:fromPt.name, to:toPt.name,
+             durMin:groundTime(km,mode),
+             basePrice: base, classKey:'cab', classId: classId,
+             price: Math.round(base*optMult/10)*10,
+             fromPt: { lat:fromPt.lat, lng:fromPt.lng, name:fromPt.name },
+             toPt:   { lat:toPt.lat,   lng:toPt.lng,   name:toPt.name },
+             book: mode==='cab' ? uberLink(fromPt,toPt) : olaLink(fromPt,toPt),
+             bookLabel: mode==='cab' ? 'Uber' : 'Ola' };
+  }
+  function wait(mins, label){ return { mode:'wait', label:label, durMin:mins, price:0 }; }
+
+  // ----- FLIGHT JOURNEY -----
+  if (avoid.indexOf('flight')<0 && crow > 200 && depAir.item && arrAir.item
+      && depAir.item.iata !== arrAir.item.iata){
+    var aFrom = { name: depAir.item.name + ' (' + depAir.item.iata + ')', lat: depAir.item.lat, lng: depAir.item.lng };
+    var aTo   = { name: arrAir.item.name + ' (' + arrAir.item.iata + ')', lat: arrAir.item.lat, lng: arrAir.item.lng };
+    var pre  = groundLeg(depAir.km, 'Uber', from, aFrom);
+    var post = groundLeg(arrAir.km, 'Cab', aTo, to);
+    if (pre && post){
+      var flightCrow = distKm(depAir.item, arrAir.item);
+      var flightMin  = Math.round(flightCrow/11 + 35);
+      var flightPrice= Math.round((1500 + flightCrow*4.2)/10)*10;
+      var dep = STATE.time < '20:00' ? addMin(STATE.time, 240) : '06:30';
+      var cabArr = addMin(dep, -120);
+      pre.depTime = addMin(cabArr, -pre.durMin); pre.arrTime = cabArr;
+      var w1 = wait(120, 'Check-in & boarding'); w1.depTime=cabArr; w1.arrTime=dep;
+      var fl = { mode:'flight', provider:'IndiGo / Akasa', from:aFrom.name, to:aTo.name,
+                 durMin:flightMin, basePrice:flightPrice, classKey:'flight', classId:'eco',
+                 price:flightPrice, depTime:dep, arrTime:addMin(dep,flightMin),
+                 sub:dep + ' \u2013 ' + addMin(dep,flightMin),
+                 book: skyscannerLink(depAir.item.iata, arrAir.item.iata), bookLabel:'Skyscanner' };
+      var w2 = wait(25, 'Deplane & exit'); w2.depTime=fl.arrTime; w2.arrTime=addMin(fl.arrTime,25);
+      post.depTime=w2.arrTime; post.arrTime=addMin(w2.arrTime,post.durMin);
+      journeys.push(makeJourney('flight',[pre,w1,fl,w2,post]));
+    }
+  }
+
+  // ----- TRAIN JOURNEY -----
+  if (avoid.indexOf('train')<0 && depStn.item && arrStn.item
+      && depStn.item.code !== arrStn.item.code){
+    var sFrom = { name: depStn.item.name, lat: depStn.item.lat, lng: depStn.item.lng };
+    var sTo   = { name: arrStn.item.name, lat: arrStn.item.lat, lng: arrStn.item.lng };
+    var preT  = groundLeg(depStn.km, 'Ola', from, sFrom);
+    var postT = groundLeg(arrStn.km, 'Cab', sTo, to);
+    if (preT && postT){
+      var trMin = Math.round(roadKm/0.85 + 30);
+      var trDep = '21:30';
+      var cabArrT = addMin(trDep, -30);
+      preT.depTime = addMin(cabArrT,-preT.durMin); preT.arrTime=cabArrT;
+      var wt1 = wait(30,'Platform & boarding'); wt1.depTime=cabArrT; wt1.arrTime=trDep;
+      var trBase = Math.round((600+roadKm*2.6)/10)*10;  // base = 2AC
+      var tr = { mode:'train', provider:'Express train', from:sFrom.name, to:sTo.name,
+                 durMin:trMin, basePrice:trBase, classKey:'train', classId:'2A',
+                 price:trBase, depTime:trDep, arrTime:addMin(trDep,trMin),
+                 sub:'2nd AC \u00B7 ' + trDep + ' \u2013 ' + addMin(trDep,trMin),
+                 book: irctcLink(), bookLabel:'IRCTC' };
+      var wt2 = wait(15,'Exit station'); wt2.depTime=tr.arrTime; wt2.arrTime=addMin(tr.arrTime,15);
+      postT.depTime=wt2.arrTime; postT.arrTime=addMin(wt2.arrTime,postT.durMin);
+      journeys.push(makeJourney('train',[preT,wt1,tr,wt2,postT]));
+    }
+  }
+
+  // ----- BUS JOURNEY -----
+  if (avoid.indexOf('bus')<0){
+    var busFromCity = (depStn.item && depStn.item.city) || from.name;
+    var busToCity   = (arrStn.item && arrStn.item.city) || to.name;
+    var bFrom = { name: busFromCity + ' Bus Stand',
+                  lat: depStn.item ? depStn.item.lat : from.lat,
+                  lng: depStn.item ? depStn.item.lng : from.lng };
+    var bTo   = { name: busToCity + ' Bus Stand',
+                  lat: arrStn.item ? arrStn.item.lat : to.lat,
+                  lng: arrStn.item ? arrStn.item.lng : to.lng };
+    var preB  = groundLeg(distKm(from,bFrom), 'Auto', from, bFrom);
+    var postB = groundLeg(distKm(bTo,to), 'Auto', bTo, to);
+    if (preB && postB){
+      var busMin = Math.round(roadKm/0.62 + 40);
+      var busDep = '21:00';
+      var cabArrB = addMin(busDep, -25);
+      preB.depTime = addMin(cabArrB,-preB.durMin); preB.arrTime=cabArrB;
+      var wb1 = wait(25,'Boarding'); wb1.depTime=cabArrB; wb1.arrTime=busDep;
+      var busBase = Math.round((400+roadKm*1.7)/10)*10;  // base = Sleeper A/C
+      var bs = { mode:'bus', provider:'Intercity coach', from:bFrom.name, to:bTo.name,
+                 durMin:busMin, basePrice:busBase, classKey:'bus', classId:'sleeper',
+                 price:busBase, depTime:busDep, arrTime:addMin(busDep,busMin),
+                 sub:'Sleeper A/C \u00B7 ' + busDep + ' \u2013 ' + addMin(busDep,busMin),
+                 book: redbusLink(busFromCity, busToCity), bookLabel:'RedBus' };
+      var wb2 = wait(10,'Get off'); wb2.depTime=bs.arrTime; wb2.arrTime=addMin(bs.arrTime,10);
+      postB.depTime=wb2.arrTime; postB.arrTime=addMin(wb2.arrTime,postB.durMin);
+      journeys.push(makeJourney('bus',[preB,wb1,bs,wb2,postB]));
+    }
+  }
+
+  return journeys;
+}
+
+function makeJourney(primaryMode, legs){
+  var j = {
+    primaryMode: primaryMode, legs: legs,
+    startTime: legs[0].depTime, endTime: legs[legs.length-1].arrTime
+  };
+  recalcJourney(j);
+  return j;
+}
+
+// recompute leg prices + totals (called after a class change)
+function recalcJourney(j){
+  j.legs.forEach(function(l){
+    if (l.classKey && l.basePrice){
+      var mult = 1;
+      (CLASS_OPTIONS[l.classKey]||[]).forEach(function(o){ if(o.id===l.classId) mult=o.mult; });
+      l.price = Math.round(l.basePrice * mult / 10) * 10;
+    }
+  });
+  j.totalMin   = j.legs.reduce(function(s,l){return s+l.durMin;},0);
+  j.totalPrice = j.legs.reduce(function(s,l){return s+l.price;},0);
+  j.transitMin = j.legs.filter(function(l){return l.mode==='wait';}).reduce(function(s,l){return s+l.durMin;},0);
+  j.movingMin  = j.totalMin - j.transitMin;
+}
+
+// ===================================================================
+//  EVENT WIRING
+// ===================================================================
+function wire(){
+  if (STATE.screen === 'search') wireSearch();
+  if (STATE.screen === 'results') wireResults();
+  if (STATE.screen === 'detail') wireDetail();
+}
+
+function wireSearch(){
+  ['from','to'].forEach(function(which){
+    var input = document.getElementById('input_' + which);
+    var dd = document.getElementById('dd_' + which);
+    if (input){
+      input.addEventListener('input', function(){
+        var q = input.value.trim();
+        if (q.length < 3){
+          dd.innerHTML = '<button class="gps-btn" data-gps="' + which + '">' +
+            '<div class="gps-ic">\uD83D\uDCCD</div>' +
+            '<div><div class="sug-name">Use my current location</div>' +
+            '<div class="sug-sub">Detect where you are with GPS</div></div></button>' +
+            '<div class="dd-msg">Type at least 3 letters to search\u2026</div>';
+          dd.classList.remove('hidden');
+          bindGps(dd, which);
+          return;
+        }
+        dd.classList.remove('hidden');
+        dd.innerHTML = '<div class="dd-msg"><span class="dd-spinner"></span>Searching real places\u2026</div>';
+        liveSearch(q, function(places){
+          if (places === null){
+            dd.innerHTML = '<div class="dd-msg">Couldn\u2019t reach the location service. Check your internet and try again.</div>';
+            return;
+          }
+          if (!places.length){
+            dd.innerHTML = '<div class="dd-msg">No places found for \u201C' + esc(q) + '\u201D. Try a nearby landmark.</div>';
+            return;
+          }
+          dd.innerHTML = places.map(function(p,i){
+            return '<button class="sug" data-pick="' + which + '" data-idx="' + i + '">' +
+              '<div class="sug-ic">\uD83D\uDCCD</div>' +
+              '<div><div class="sug-name">' + esc(p.name) + '</div>' +
+              '<div class="sug-sub">' + esc(p.sub) + '</div></div></button>';
+          }).join('');
+          // bind picks
+          dd.querySelectorAll('[data-pick]').forEach(function(btn){
+            btn.addEventListener('click', function(){
+              var p = places[+btn.getAttribute('data-idx')];
+              STATE[which] = p;
+              render();
+            });
+          });
+        });
+      });
+      input.addEventListener('focus', function(){
+        if (input.value.trim().length < 3){
+          dd.innerHTML = '<button class="gps-btn" data-gps="' + which + '">' +
+            '<div class="gps-ic">\uD83D\uDCCD</div>' +
+            '<div><div class="sug-name">Use my current location</div>' +
+            '<div class="sug-sub">Detect where you are with GPS</div></div></button>' +
+            '<div class="dd-msg">Start typing a building, street or area\u2026</div>';
+          dd.classList.remove('hidden');
+          bindGps(dd, which);
+        }
+      });
+    }
+  });
+
+  // close dropdowns on outside click
+  document.addEventListener('click', function(e){
+    document.querySelectorAll('.dropdown').forEach(function(dd){
+      var row = dd.closest('.place-row');
+      if (row && !row.contains(e.target)) dd.classList.add('hidden');
+    });
+  });
+
+  // clear buttons
+  document.querySelectorAll('[data-clear]').forEach(function(btn){
+    btn.addEventListener('click', function(){ STATE[btn.getAttribute('data-clear')] = null; render(); });
+  });
+
+  // swap
+  var sb = document.getElementById('swapBtn');
+  if (sb) sb.addEventListener('click', function(){ var t=STATE.from; STATE.from=STATE.to; STATE.to=t; render(); });
+
+  // selects
+  var ds=document.getElementById('dateSel'); if(ds) ds.addEventListener('change',function(){STATE.date=ds.value;});
+  var ts=document.getElementById('timeSel'); if(ts) ts.addEventListener('change',function(){STATE.time=ts.value;});
+  var ps=document.getElementById('paxSel');  if(ps) ps.addEventListener('change',function(){STATE.pax=+ps.value;});
+
+  // avoid chips
+  document.querySelectorAll('[data-avoid]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var m = btn.getAttribute('data-avoid');
+      var i = STATE.avoid.indexOf(m);
+      if (i>=0) STATE.avoid.splice(i,1); else STATE.avoid.push(m);
+      render();
+    });
+  });
+
+  // popular routes (preset coordinates so it works instantly)
+  document.querySelectorAll('[data-pop]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var p = btn.getAttribute('data-pop');
+      if (p==='ecgoa'){
+        STATE.from = { name:'Electronic City Phase 1', sub:'Bengaluru, Karnataka', lat:12.8452, lng:77.6602 };
+        STATE.to   = { name:'Anjuna Beach', sub:'Goa', lat:15.5735, lng:73.7400 };
+      } else {
+        STATE.from = { name:'Koramangala', sub:'Bengaluru, Karnataka', lat:12.9352, lng:77.6245 };
+        STATE.to   = { name:'Bandra', sub:'Mumbai, Maharashtra', lat:19.0596, lng:72.8295 };
+      }
+      render();
+    });
+  });
+
+  // search button
+  var go = document.getElementById('searchBtn');
+  if (go) go.addEventListener('click', function(){
+    var errBox = document.getElementById('errBox');
+    if (!STATE.from || !STATE.to){
+      errBox.innerHTML = '<div class="err">Please choose where you\u2019re starting from and where you\u2019re going.</div>';
+      return;
+    }
+    if (distKm(STATE.from, STATE.to) < 3){
+      errBox.innerHTML = '<div class="err">Origin and destination are basically the same place.</div>';
+      return;
+    }
+    STATE.screen = 'loading';
+    render();
+    setTimeout(function(){
+      STATE.journeys = buildJourneys();
+      STATE.screen = 'results';
+      render();
+    }, 1600);
+  });
+}
+
+function bindGps(dd, which){
+  var gps = dd.querySelector('[data-gps]');
+  if (!gps) return;
+  gps.addEventListener('click', function(){
+    if (!navigator.geolocation){
+      gps.querySelector('.sug-sub').textContent = 'GPS not supported on this device.';
+      return;
+    }
+    gps.querySelector('.sug-name').textContent = 'Locating you\u2026';
+    gps.querySelector('.sug-sub').textContent = 'Please allow location access';
+    navigator.geolocation.getCurrentPosition(
+      function(pos){
+        reverseGeocode(pos.coords.latitude, pos.coords.longitude, function(place){
+          STATE[which] = place;
+          render();
+        });
+      },
+      function(err){
+        gps.querySelector('.sug-name').textContent = 'Use my current location';
+        gps.querySelector('.sug-sub').textContent =
+          (err.code===1) ? 'Location permission denied \u2014 type it instead.' : 'Couldn\u2019t get GPS \u2014 type it instead.';
+      },
+      { enableHighAccuracy:true, timeout:10000 }
+    );
+  });
+}
+
+function wireResults(){
+  var es = document.getElementById('editSearch');
+  if (es) es.addEventListener('click', function(){ STATE.screen='search'; render(); });
+  document.querySelectorAll('[data-sort]').forEach(function(btn){
+    btn.addEventListener('click', function(){ STATE.sort = btn.getAttribute('data-sort'); render(); });
+  });
+  document.querySelectorAll('[data-detail]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var sorted = STATE.journeys.slice();
+      if (STATE.sort==='cheapest') sorted.sort(function(x,y){return x.totalPrice-y.totalPrice;});
+      else if (STATE.sort==='fastest') sorted.sort(function(x,y){return x.totalMin-y.totalMin;});
+      else sorted.sort(function(x,y){return (x.totalPrice+x.totalMin*14)-(y.totalPrice+y.totalMin*14);});
+      STATE.detailJourney = sorted[+btn.getAttribute('data-detail')];
+      STATE.screen = 'detail';
+      render();
+    });
+  });
+}
+
+function wireDetail(){
+  var b = document.getElementById('backResults');
+  if (b) b.addEventListener('click', function(){ STATE.screen='results'; render(); });
+  // class selectors — change vehicle/coach/bus type, recalc prices
+  document.querySelectorAll('.leg-class-sel').forEach(function(sel){
+    sel.addEventListener('change', function(){
+      var legIdx = +sel.getAttribute('data-leg');
+      var j = STATE.detailJourney;
+      var leg = j.legs[legIdx];
+      leg.classId = sel.value;
+      // update the leg's visible sub-label and provider hints
+      var optLabel = '';
+      (CLASS_OPTIONS[leg.classKey]||[]).forEach(function(o){ if(o.id===leg.classId) optLabel=o.label; });
+      if (leg.classKey==='train'){ leg.sub = optLabel + ' \u00B7 ' + leg.depTime + ' \u2013 ' + leg.arrTime; }
+      if (leg.classKey==='bus'){ leg.sub = optLabel + ' \u00B7 ' + leg.depTime + ' \u2013 ' + leg.arrTime; }
+      if (leg.classKey==='cab'){
+        leg.mode = (leg.classId==='auto') ? 'auto' : 'cab';
+        leg.provider = (leg.classId==='auto') ? 'Rapido Auto' : 'Uber / Ola';
+      }
+      recalcJourney(j);
+      render();
+    });
+  });
+}
+
+// ---------- BOOT ----------
+render();
+</script>
+</body>
+</html>
