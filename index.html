@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stitch — plan your door-to-door trip</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#F1F2F4;color:#0B0F19;-webkit-font-smoothing:antialiased;}
+  button,input,select{font-family:inherit;}
+  button{cursor:pointer;}
+  .topbar{background:#0B0F19;}
+  .topbar-in{max-width:1100px;margin:0 auto;padding:13px 16px;display:flex;align-items:center;gap:8px;}
+  .logo-mark{width:28px;height:28px;border-radius:8px;background:#0770E3;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;}
+  .logo-text{font-size:18px;font-weight:800;color:#fff;}
+  .logo-sub{font-size:12px;color:#6B7280;margin-left:3px;}
+
+  .hero{background:linear-gradient(160deg,#0B0F19 0%,#142042 100%);padding-bottom:80px;}
+  .hero-in{max-width:720px;margin:0 auto;padding:40px 16px 0;}
+  .hero h1{font-size:32px;font-weight:800;color:#fff;letter-spacing:-0.025em;line-height:1.15;}
+  .hero p{font-size:15px;color:#9AA6BC;margin-top:8px;max-width:480px;}
+
+  .wrap{max-width:720px;margin:-56px auto 0;padding:0 16px 60px;}
+  .card{background:#fff;border:1px solid #E6E8EB;border-radius:18px;box-shadow:0 12px 40px rgba(11,15,25,0.14);padding:18px;}
+
+  .place-row{position:relative;}
+  .place-box{border:1px solid #D7DBE0;border-radius:12px;padding:9px 12px;background:#fff;display:flex;align-items:center;gap:10px;}
+  .place-box:focus-within{border-color:#0770E3;}
+  .dot{width:9px;height:9px;border-radius:99px;background:#0B0F19;flex-shrink:0;}
+  .diamond{width:9px;height:9px;background:#0770E3;transform:rotate(45deg);flex-shrink:0;}
+  .place-label{font-size:10px;font-weight:700;color:#9AA1AB;letter-spacing:0.05em;text-transform:uppercase;}
+  .place-input{border:none;outline:none;font-size:14.5px;width:100%;color:#0B0F19;background:transparent;padding:0;}
+  .place-chosen{font-size:14.5px;font-weight:700;color:#0B0F19;}
+  .clear-btn{background:none;border:none;color:#9AA1AB;font-size:16px;line-height:1;padding:2px 4px;}
+
+  .dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid #E6E8EB;border-radius:12px;box-shadow:0 12px 32px rgba(11,15,25,0.16);z-index:40;overflow:hidden;max-height:300px;overflow-y:auto;}
+  .gps-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;background:#F5FAFF;border:none;border-bottom:1px solid #E6EEF8;text-align:left;}
+  .gps-btn:hover{background:#EAF3FE;}
+  .gps-ic{width:30px;height:30px;border-radius:8px;background:#0770E3;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .sug{display:flex;align-items:flex-start;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;border-bottom:1px solid #F3F4F6;text-align:left;}
+  .sug:last-child{border-bottom:none;}
+  .sug:hover{background:#F5FAFF;}
+  .sug-ic{width:30px;height:30px;border-radius:8px;background:#F1F4F8;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+  .sug-name{font-size:13.5px;font-weight:600;color:#0B0F19;line-height:1.3;}
+  .sug-sub{font-size:11.5px;color:#6B7280;line-height:1.3;margin-top:1px;}
+  .dd-msg{padding:14px 16px;font-size:13px;color:#9AA1AB;}
+  .dd-spinner{display:inline-block;width:13px;height:13px;border:2px solid #C9D6E8;border-top-color:#0770E3;border-radius:99px;animation:spin .8s linear infinite;vertical-align:-2px;margin-right:7px;}
+
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+  .field{border:1px solid #D7DBE0;border-radius:12px;padding:8px 10px;background:#fff;}
+  .field-label{font-size:10px;font-weight:700;color:#9AA1AB;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:2px;}
+  .field select,.field input{border:none;outline:none;background:transparent;font-size:13.5px;font-weight:700;color:#0B0F19;width:100%;}
+  .swap-btn{position:absolute;right:8px;top:calc(50% - 15px);width:30px;height:30px;border-radius:99px;background:#fff;border:1px solid #D7DBE0;display:flex;align-items:center;justify-content:center;font-size:14px;}
+
+  .avoid-title{font-size:12px;font-weight:700;color:#374151;letter-spacing:0.03em;text-transform:uppercase;margin:16px 0 8px;}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;}
+  .chip{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:99px;border:1px solid #D7DBE0;background:#fff;color:#374151;font-size:13px;font-weight:600;}
+  .chip.on{background:#0B0F19;color:#fff;border-color:#0B0F19;}
+  .err{margin-top:14px;background:#FEF2F2;border:1px solid #FECACA;border-radius:9px;padding:9px 12px;font-size:13px;color:#B91C1C;}
+  .cta{width:100%;background:#0770E3;color:#fff;font-size:15px;font-weight:700;padding:14px;border-radius:12px;border:none;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .cta:hover{background:#045CC0;}
+  .popular-title{font-size:12px;font-weight:700;color:#6B7280;letter-spacing:0.04em;text-transform:uppercase;margin:20px 0 8px;}
+  .pop-chip{background:#fff;border:1px solid #E6E8EB;border-radius:99px;padding:8px 14px;font-size:13px;color:#374151;font-weight:600;margin-right:8px;margin-bottom:8px;}
+
+  .results-head{background:#fff;border-bottom:1px solid #E6E8EB;}
+  .results-head-in{max-width:1100px;margin:0 auto;padding:14px 16px;}
+  .back-link{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:#0770E3;font-weight:600;background:none;border:none;margin-bottom:6px;}
+  .route-title{font-size:20px;font-weight:800;color:#0B0F19;letter-spacing:-0.02em;}
+  .route-sub{font-size:12.5px;color:#6B7280;margin-top:2px;}
+
+  .results-wrap{max-width:760px;margin:0 auto;padding:16px;}
+  .honesty-note{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 14px;font-size:12px;color:#1E40AF;margin-bottom:12px;line-height:1.5;}
+  .tabs{background:#fff;border:1px solid #E6E8EB;border-radius:12px;display:flex;overflow:hidden;margin-bottom:12px;}
+  .tab{flex:1;text-align:left;padding:11px 14px;background:#fff;border:none;border-right:1px solid #EEF0F2;border-bottom:2px solid transparent;}
+  .tab:last-child{border-right:none;}
+  .tab.active{background:#F5FAFF;border-bottom-color:#0770E3;}
+  .tab-label{font-size:12.5px;font-weight:700;color:#374151;}
+  .tab.active .tab-label{color:#0770E3;}
+  .tab-price{font-size:14px;font-weight:800;color:#0B0F19;margin-top:1px;}
+  .tab-dur{font-size:11.5px;color:#6B7280;}
+
+  .jcard{background:#fff;border:1px solid #E6E8EB;border-radius:12px;padding:16px;margin-bottom:10px;}
+  .jcard:hover{box-shadow:0 6px 20px rgba(11,15,25,0.08);border-color:#C9D6E8;}
+  .jhead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .jmode{display:flex;align-items:center;gap:7px;}
+  .jmode-ic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#fff;}
+  .jmode-name{font-size:15px;font-weight:800;}
+  .jtag{font-size:10.5px;font-weight:700;color:#0770E3;background:#EAF3FE;padding:2px 7px;border-radius:99px;}
+  .jtime{font-size:12.5px;color:#6B7280;margin-top:4px;}
+  .jprice{font-size:16px;font-weight:800;color:#0B0F19;text-align:right;}
+  .jprice-sub{font-size:11px;color:#9AA1AB;text-align:right;}
+  .ribbon{display:flex;gap:3px;margin-top:13px;height:30px;}
+  .rib{display:flex;align-items:center;justify-content:center;gap:5px;color:#fff;font-size:10.5px;font-weight:600;}
+  .jstats{display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;}
+  .stat-label{font-size:10px;color:#9AA1AB;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;}
+  .stat-val{font-size:13px;font-weight:700;}
+  .legs{margin-top:12px;border-top:1px solid #EEF0F2;padding-top:12px;}
+  .leg{display:flex;align-items:center;gap:9px;padding:5px 0;}
+  .leg-ic{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;}
+  .leg-txt{font-size:12.5px;color:#374151;font-weight:600;flex:1;}
+  .leg-from{color:#9AA1AB;font-weight:400;}
+  .leg-dur{font-size:12px;color:#6B7280;}
+  .wait-leg{display:flex;align-items:center;gap:9px;padding:3px 0 3px 5px;}
+  .wait-bar{width:2px;height:16px;background:#E2C9A0;}
+  .wait-txt{font-size:11.5px;color:#B45309;font-style:italic;}
+  .empty{background:#fff;border:1px solid #E6E8EB;border-radius:12px;padding:40px 20px;text-align:center;}
+
+  .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;padding:24px;}
+  .spinner{width:60px;height:60px;border:3px solid #0770E3;border-top-color:transparent;border-radius:99px;animation:spin 1s linear infinite;margin-bottom:24px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media (max-width:520px){.fields{grid-template-columns:1fr;}.hero h1{font-size:27px;}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* =====================================================================
+   STITCH — honest door-to-door trip planner
+   - NO fake specific times. Journeys use honest descriptions + estimate
+     ranges, all clearly labelled "estimate".
+   - Live prices, seats and exact timings come from the partner (RedBus,
+     Skyscanner, IRCTC) when the user taps through. We never invent them.
+   - Partner handoff links are built carefully and validated so they
+     never send "undefined".
+   ===================================================================== */
+
+var STATE = {
+  screen:'search', from:null, to:null,
+  date:'tomorrow', pax:1, avoid:[],
+  journeys:[], sort:'best', detailJourney:null,
+  trainData:null   // loaded from train_routes.json at startup
+};
+
+// real Indian Railways train schedules (datameet/railways, CC0 public domain).
+// loaded once at startup; if it fails, app still works with honest fallback.
+function loadTrainData(){
+  fetch('train_routes.json')
+    .then(function(r){ return r.json(); })
+    .then(function(d){ STATE.trainData=d; })
+    .catch(function(){ STATE.trainData=null; });  // honest fallback if not found
+}
+
+// map a lat/lng location to a major city name (for train route lookup)
+var TRAIN_CITIES={
+  'Bengaluru':{lat:12.9716,lng:77.5946},'Mumbai':{lat:19.0760,lng:72.8777},
+  'Delhi':{lat:28.6139,lng:77.2090},'Chennai':{lat:13.0827,lng:80.2707},
+  'Kolkata':{lat:22.5726,lng:88.3639},'Hyderabad':{lat:17.3850,lng:78.4867},
+  'Pune':{lat:18.5204,lng:73.8567},'Goa':{lat:15.4909,lng:73.8278},
+  'Ahmedabad':{lat:23.0225,lng:72.5714},'Jaipur':{lat:26.9124,lng:75.7873},
+  'Kochi':{lat:9.9312,lng:76.2673},'Chandigarh':{lat:30.7333,lng:76.7794},
+  'Lucknow':{lat:26.8467,lng:80.9462},'Bhopal':{lat:23.2599,lng:77.4126},
+  'Nagpur':{lat:21.1458,lng:79.0882},'Coimbatore':{lat:11.0168,lng:76.9558},
+  'Surat':{lat:21.1702,lng:72.8311},'Indore':{lat:22.7196,lng:75.8577},
+  'Patna':{lat:25.5941,lng:85.1376},'Varanasi':{lat:25.3176,lng:82.9739},
+  'Trivandrum':{lat:8.5241,lng:76.9366},'Visakhapatnam':{lat:17.6868,lng:83.2185},
+  'Bhubaneswar':{lat:20.2961,lng:85.8245},'Guwahati':{lat:26.1445,lng:91.7362},
+  'Mysuru':{lat:12.2958,lng:76.6394},'Mangaluru':{lat:12.9141,lng:74.8560}
+};
+// nearest major train-city to a point, only if reasonably close (<60km)
+function nearestTrainCity(point){
+  var best=null,bd=Infinity;
+  for(var city in TRAIN_CITIES){
+    var d=distKm(point,TRAIN_CITIES[city]);
+    if(d<bd){bd=d;best=city;}
+  }
+  return bd<60?best:null;
+}
+
+// ---------- helpers ----------
+function inr(n){ return '\u20B9' + Math.round(n).toLocaleString('en-IN'); }
+function durFmt(m){ m=Math.round(m); return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];}); }
+function distKm(a,b){
+  var R=6371,toRad=function(d){return d*Math.PI/180;};
+  var dLat=toRad(b.lat-a.lat),dLng=toRad(b.lng-a.lng);
+  var s=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));
+}
+// tight estimate range, <=10% spread
+function rangeStr(est){
+  var low=Math.round(est*0.96/10)*10, high=Math.round(est*1.05/10)*10;
+  return inr(low)+' \u2013 '+inr(high);
+}
+// honest duration label — a window, not a fake exact figure
+function durRange(mins){
+  var low=Math.round(mins*0.9/30)*30, high=Math.round(mins*1.15/30)*30;
+  return durFmt(low)+' \u2013 '+durFmt(high);
+}
+
+var MODE_COLOR={flight:'#0770E3',cab:'#111827',auto:'#7C3AED',bus:'#B45309',train:'#15803D',wait:'#E2C9A0'};
+var MODE_GLYPH={flight:'\u2708',cab:'\uD83D\uDE97',auto:'\uD83D\uDEFA',bus:'\uD83D\uDE8C',train:'\uD83D\uDE86'};
+
+// ---------- airports & stations ----------
+var AIRPORTS=[
+ {iata:'BLR',name:'Kempegowda Intl',city:'Bengaluru',lat:13.1986,lng:77.7066},
+ {iata:'BOM',name:'Chhatrapati Shivaji Maharaj Intl',city:'Mumbai',lat:19.0896,lng:72.8656},
+ {iata:'DEL',name:'Indira Gandhi Intl',city:'Delhi',lat:28.5562,lng:77.1000},
+ {iata:'MAA',name:'Chennai Intl',city:'Chennai',lat:12.9941,lng:80.1709},
+ {iata:'HYD',name:'Rajiv Gandhi Intl',city:'Hyderabad',lat:17.2403,lng:78.4294},
+ {iata:'CCU',name:'Netaji Subhas Chandra Bose Intl',city:'Kolkata',lat:22.6547,lng:88.4467},
+ {iata:'GOX',name:'Manohar Intl (Mopa)',city:'Goa',lat:15.7360,lng:73.8580},
+ {iata:'COK',name:'Cochin Intl',city:'Kochi',lat:10.1520,lng:76.4019},
+ {iata:'PNQ',name:'Pune Airport',city:'Pune',lat:18.5793,lng:73.9089},
+ {iata:'AMD',name:'Sardar Vallabhbhai Patel Intl',city:'Ahmedabad',lat:23.0772,lng:72.6347},
+ {iata:'JAI',name:'Jaipur Intl',city:'Jaipur',lat:26.8242,lng:75.8122},
+ {iata:'HYD',name:'Rajiv Gandhi Intl',city:'Hyderabad',lat:17.2403,lng:78.4294}
+];
+var STATIONS=[
+ // Bengaluru
+ {code:'SBC',name:'KSR Bengaluru City Jn',city:'Bengaluru',lat:12.9783,lng:77.5710},
+ {code:'YPR',name:'Yesvantpur Jn',city:'Bengaluru',lat:13.0236,lng:77.5520},
+ {code:'KJM',name:'Krishnarajapuram',city:'Bengaluru',lat:13.0010,lng:77.6770},
+ // Mumbai — several railheads across the city
+ {code:'CSMT',name:'Mumbai CSMT',city:'Mumbai',lat:18.9398,lng:72.8355},
+ {code:'DR',name:'Dadar',city:'Mumbai',lat:19.0190,lng:72.8425},
+ {code:'BDTS',name:'Bandra Terminus',city:'Mumbai',lat:19.0610,lng:72.8400},
+ {code:'BVI',name:'Borivali',city:'Mumbai',lat:19.2300,lng:72.8570},
+ {code:'LTT',name:'Lokmanya Tilak Term (Kurla)',city:'Mumbai',lat:19.0660,lng:72.8880},
+ // Delhi
+ {code:'NDLS',name:'New Delhi',city:'Delhi',lat:28.6431,lng:77.2197},
+ {code:'DLI',name:'Old Delhi',city:'Delhi',lat:28.6610,lng:77.2270},
+ {code:'NZM',name:'Hazrat Nizamuddin',city:'Delhi',lat:28.5880,lng:77.2510},
+ // others
+ {code:'MAS',name:'MGR Chennai Central',city:'Chennai',lat:13.0827,lng:80.2755},
+ {code:'SC',name:'Secunderabad Jn',city:'Hyderabad',lat:17.4344,lng:78.5013},
+ {code:'HWH',name:'Howrah Jn',city:'Kolkata',lat:22.5839,lng:88.3425},
+ {code:'MAO',name:'Madgaon Jn',city:'Goa',lat:15.2730,lng:73.9636},
+ {code:'PUNE',name:'Pune Jn',city:'Pune',lat:18.5286,lng:73.8742},
+ {code:'ADI',name:'Ahmedabad Jn',city:'Ahmedabad',lat:23.0265,lng:72.6010},
+ {code:'JP',name:'Jaipur Jn',city:'Jaipur',lat:26.9197,lng:75.7878}
+];
+function nearest(list,point){
+  var best=null,bd=Infinity;
+  for(var i=0;i<list.length;i++){var d=distKm(point,list[i]);if(d<bd){bd=d;best=list[i];}}
+  return {item:best,km:bd};
+}
+
+// ---------- travel date ----------
+function travelDateObj(){
+  // STATE.date can be 'today' | 'tomorrow' | 'dayafter' | a 'YYYY-MM-DD' string
+  if(STATE.date && /^\d{4}-\d{2}-\d{2}$/.test(STATE.date)){
+    var p=STATE.date.split('-');
+    return new Date(+p[0], +p[1]-1, +p[2]);
+  }
+  var d=new Date();
+  if(STATE.date==='tomorrow') d.setDate(d.getDate()+1);
+  else if(STATE.date==='dayafter') d.setDate(d.getDate()+2);
+  return d;
+}
+function dateLabel(){
+  var d=travelDateObj();
+  var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var mon=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return days[d.getDay()]+' '+d.getDate()+' '+mon[d.getMonth()];
+}
+
+// ---------- PARTNER HANDOFF LINKS (validated — never "undefined") ----------
+function slug(s){ return String(s||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+
+function skyscannerLink(fromIata,toIata){
+  if(!fromIata||!toIata) return 'https://www.skyscanner.co.in/';
+  var d=travelDateObj();
+  var ymd=String(d.getFullYear()).slice(2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  return 'https://www.skyscanner.co.in/transport/flights/'+fromIata.toLowerCase()+'/'+toIata.toLowerCase()+'/'+ymd+'/?adults='+(STATE.pax||1);
+}
+function redbusLink(fromCity,toCity){
+  // VALIDATED: if either city is missing, fall back to RedBus home — never send "undefined"
+  if(!fromCity||!toCity) return 'https://www.redbus.in/';
+  var d=travelDateObj();
+  var mon=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var dateStr=String(d.getDate()).padStart(2,'0')+'-'+mon[d.getMonth()]+'-'+d.getFullYear();
+  return 'https://www.redbus.in/bus-tickets/'+slug(fromCity)+'-to-'+slug(toCity)+'?onward='+encodeURIComponent(dateStr);
+}
+function irctcLink(){ return 'https://www.irctc.co.in/nget/train-search'; }
+function uberLink(fromPt,toPt){
+  if(!fromPt||!toPt) return 'https://m.uber.com/';
+  return 'https://m.uber.com/looking?pickup='+encodeURIComponent(JSON.stringify({latitude:fromPt.lat,longitude:fromPt.lng,addressLine1:fromPt.name||''}))+
+    '&drop[0]='+encodeURIComponent(JSON.stringify({latitude:toPt.lat,longitude:toPt.lng,addressLine1:toPt.name||''}));
+}
+function olaLink(fromPt,toPt){
+  if(!fromPt||!toPt) return 'https://www.olacabs.com/';
+  return 'https://book.olacabs.com/?lat='+fromPt.lat+'&lng='+fromPt.lng+'&drop_lat='+toPt.lat+'&drop_lng='+toPt.lng;
+}
+
+// ---------- estimate model (clearly an estimate, never shown as fact) ----------
+function groundEstimate(km){ return Math.round((110 + km*21)/10)*10; }   // cab estimate
+function autoEstimate(km){ return Math.round((40 + km*13)/10)*10; }
+function groundMins(km,fast){ return Math.round(km/(fast?34:28)*60 + 8); }
+
+// ---------- CLASS / VEHICLE OPTIONS (user-editable per leg) ----------
+var CLASS_OPTIONS={
+  cab:[ {id:'auto',label:'Auto',mult:0.55},{id:'mini',label:'Mini / Hatchback',mult:0.85},
+        {id:'sedan',label:'Sedan',mult:1.00},{id:'suv',label:'SUV / Prime',mult:1.35} ],
+  train:[ {id:'SL',label:'Sleeper (SL)',mult:0.30},{id:'3A',label:'AC 3-Tier (3A)',mult:0.70},
+          {id:'2A',label:'AC 2-Tier (2A)',mult:1.00},{id:'1A',label:'AC First (1A)',mult:1.70} ],
+  bus:[ {id:'seater',label:'Seater Non-AC',mult:0.55},{id:'seatac',label:'Seater AC',mult:0.78},
+        {id:'sleeper',label:'Sleeper AC',mult:1.00},{id:'volvo',label:'Volvo Multi-Axle',mult:1.22} ],
+  flight:[ {id:'eco',label:'Economy',mult:1.00},{id:'prem',label:'Premium Economy',mult:1.5},
+           {id:'biz',label:'Business',mult:2.7} ]
+};
+function classMult(key,id){
+  var m=1; (CLASS_OPTIONS[key]||[]).forEach(function(o){ if(o.id===id) m=o.mult; });
+  return m;
+}
+// recompute all leg prices + journey total after a class change
+function recalcJourney(j){
+  j.legs.forEach(function(l){
+    if(l.classKey && l.baseEst!=null) l.estPrice=Math.round(l.baseEst*classMult(l.classKey,l.classId)/10)*10;
+  });
+  j.estPrice=j.legs.reduce(function(s,l){return s+(l.estPrice||0);},0);
+  // recompute times too (train switch changes leg duration)
+  j.totalMin=j.legs.reduce(function(s,l){return s+(l.durMin||0);},0);
+  j.transitMin=j.legs.filter(function(l){return l.mode==='wait';}).reduce(function(s,l){return s+l.durMin;},0);
+  j.movingMin=j.totalMin-j.transitMin;
+}
+
+// ---------- LIVE LOCATION SEARCH (OpenStreetMap, free) ----------
+var searchTimer=null;
+function liveSearch(query,onResult){
+  if(searchTimer) clearTimeout(searchTimer);
+  searchTimer=setTimeout(function(){
+    var url='https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=7&countrycodes=in&q='+encodeURIComponent(query);
+    fetch(url,{headers:{'Accept':'application/json'}})
+      .then(function(r){return r.json();})
+      .then(function(data){
+        onResult(data.map(function(d){
+          var a=d.address||{};
+          var main=d.name||d.display_name.split(',')[0];
+          var bits=[a.suburb||a.neighbourhood,a.city||a.town||a.village,a.state].filter(Boolean);
+          var seen={},sub=bits.filter(function(x){if(seen[x])return false;seen[x]=1;return true;}).join(', ');
+          return {name:main,sub:sub||d.display_name,lat:parseFloat(d.lat),lng:parseFloat(d.lon)};
+        }));
+      })
+      .catch(function(){ onResult(null); });
+  },320);
+}
+function reverseGeocode(lat,lng,cb){
+  var url='https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&zoom=18&lat='+lat+'&lon='+lng;
+  fetch(url,{headers:{'Accept':'application/json'}})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var a=d.address||{};
+      var main=a.building||a.amenity||a.shop||a.office||(a.house_number&&a.road?(a.house_number+' '+a.road):null)||a.road||a.neighbourhood||a.suburb||a.village||a.town||a.city||'My current location';
+      var bits=[a.suburb||a.neighbourhood,a.city||a.town||a.village,a.state].filter(Boolean);
+      var seen={},sub=bits.filter(function(x){if(seen[x])return false;seen[x]=1;return true;}).join(', ');
+      cb({name:main,sub:sub||'Detected by GPS',lat:lat,lng:lng});
+    })
+    .catch(function(){ cb({name:'My current location',sub:'Detected by GPS',lat:lat,lng:lng}); });
+}
+
+// ---------- OVERPASS: real mapped transit stops near a point (free, no key) ----------
+// Finds railway stations & bus stations from OpenStreetMap data.
+// Honest: this is MAP data (where stops are) — never schedules or live times.
+function overpassTransit(lat,lng,radiusM,cb){
+  // query railway stations and bus stations within radius
+  var q='[out:json][timeout:18];('+
+        'node["railway"="station"](around:'+radiusM+','+lat+','+lng+');'+
+        'node["railway"="halt"](around:'+radiusM+','+lat+','+lng+');'+
+        'node["amenity"="bus_station"](around:'+radiusM+','+lat+','+lng+');'+
+        ');out body 40;';
+  fetch('https://overpass-api.de/api/interpreter',{
+    method:'POST', body:'data='+encodeURIComponent(q)
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var rail=[],bus=[];
+    (d.elements||[]).forEach(function(el){
+      if(!el.lat||!el.lon||!el.tags) return;
+      var name=el.tags.name||el.tags['name:en'];
+      if(!name) return;
+      var entry={name:name,lat:el.lat,lng:el.lon};
+      if(el.tags.railway) rail.push(entry); else bus.push(entry);
+    });
+    cb({rail:rail,bus:bus});
+  })
+  .catch(function(){ cb(null); });   // graceful fallback — builder uses built-in list
+}
+
+// =====================================================================
+//  RENDER
+// =====================================================================
+function render(){
+  var root=document.getElementById('app');
+  if(STATE.screen==='search') root.innerHTML=searchHTML();
+  if(STATE.screen==='loading') root.innerHTML=loadingHTML();
+  if(STATE.screen==='results') root.innerHTML=resultsHTML();
+  if(STATE.screen==='detail') root.innerHTML=detailHTML();
+  wire();
+}
+function topbar(){
+  return '<div class="topbar"><div class="topbar-in">'+
+    '<div class="logo-mark">S</div><div class="logo-text">Stitch</div>'+
+    '<div class="logo-sub">plan your door-to-door trip</div></div></div>';
+}
+
+// ---------- SEARCH ----------
+function searchHTML(){
+  var avoidModes=[['flight','Flight','\u2708'],['train','Train','\uD83D\uDE86'],['bus','Bus','\uD83D\uDE8C'],['cab','Cab','\uD83D\uDE97'],['auto','Auto','\uD83D\uDEFA']];
+  var chips=avoidModes.map(function(m){
+    var on=STATE.avoid.indexOf(m[0])>=0;
+    return '<button class="chip'+(on?' on':'')+'" data-avoid="'+m[0]+'">'+m[2]+' '+m[1]+(on?' \u2715':'')+'</button>';
+  }).join('');
+  return topbar()+
+    '<div class="hero"><div class="hero-in">'+
+      '<h1>Plan the whole trip, door to door.</h1>'+
+      '<p>Stitch shows you every way to get there \u2014 flight, train or bus \u2014 stitched with your cabs, with honest cost estimates. Tap through to our partners for live prices and booking.</p>'+
+    '</div></div>'+
+    '<div class="wrap"><div class="card">'+
+      '<div style="position:relative">'+
+        placeField('from','FROM \u2014 your exact location','Where are you starting from?')+
+        '<div style="height:10px"></div>'+
+        placeField('to','TO \u2014 where you\u2019re going','Where do you want to go?')+
+        '<button class="swap-btn" id="swapBtn" title="Swap">\u21C5</button>'+
+      '</div>'+
+      '<div class="fields">'+
+        '<div class="field"><div class="field-label">When</div><select id="dateSel">'+
+          '<option value="today"'+(STATE.date==='today'?' selected':'')+'>Today</option>'+
+          '<option value="tomorrow"'+(STATE.date==='tomorrow'?' selected':'')+'>Tomorrow</option>'+
+          '<option value="dayafter"'+(STATE.date==='dayafter'?' selected':'')+'>Day after</option>'+
+          '<option value="pick"'+(/^\d{4}-/.test(STATE.date)?' selected':'')+'>Pick a date\u2026</option>'+
+        '</select></div>'+
+        '<div class="field"><div class="field-label">Travellers</div><select id="paxSel">'+
+          [1,2,3,4,5,6].map(function(n){return '<option value="'+n+'"'+(n===STATE.pax?' selected':'')+'>'+n+(n===1?' person':' people')+'</option>';}).join('')+
+        '</select></div>'+
+      '</div>'+
+      '<div id="datePickWrap" style="'+(/^\d{4}-/.test(STATE.date)?'':'display:none;')+'margin-top:8px">'+
+        '<div class="field"><div class="field-label">Choose your travel date</div>'+
+          '<input type="date" id="dateInput" value="'+(/^\d{4}-/.test(STATE.date)?STATE.date:'')+'" /></div>'+
+      '</div>'+
+      '<div class="avoid-title">Avoid any modes? <span style="color:#9AA1AB;font-weight:500;text-transform:none;letter-spacing:0">optional</span></div>'+
+      '<div class="chips">'+chips+'</div>'+
+      '<div id="errBox"></div>'+
+      '<button class="cta" id="searchBtn" style="margin-top:16px">\uD83D\uDD0D Plan my journey</button>'+
+    '</div>'+
+    '<div class="popular-title">Popular routes</div>'+
+    '<div>'+
+      '<button class="pop-chip" data-pop="blrgoa">\uD83C\uDFD6\uFE0F Bengaluru \u2192 Goa</button>'+
+      '<button class="pop-chip" data-pop="delmanali">\u26F0\uFE0F Delhi \u2192 Manali</button>'+
+      '<button class="pop-chip" data-pop="mumpune">\uD83C\uDFD9\uFE0F Mumbai \u2192 Pune</button>'+
+      '<button class="pop-chip" data-pop="blrchennai">\uD83C\uDF0A Bengaluru \u2192 Chennai</button>'+
+      '<button class="pop-chip" data-pop="deljaipur">\uD83D\uDC18 Delhi \u2192 Jaipur</button>'+
+    '</div>'+
+    '</div>';
+}
+function placeField(which,label,placeholder){
+  var v=STATE[which],inner;
+  if(v){
+    inner='<div class="dot'+(which==='to'?' diamond':'')+'"></div>'+
+      '<div style="flex:1;min-width:0"><div class="place-label">'+label+'</div>'+
+      '<div class="place-chosen">'+esc(v.name)+'</div>'+
+      '<div class="sug-sub">'+esc(v.sub||'')+'</div></div>'+
+      '<button class="clear-btn" data-clear="'+which+'">\u2715</button>';
+  } else {
+    inner='<div class="dot'+(which==='to'?' diamond':'')+'"></div>'+
+      '<div style="flex:1;min-width:0"><div class="place-label">'+label+'</div>'+
+      '<input class="place-input" id="input_'+which+'" data-place="'+which+'" placeholder="'+placeholder+'" autocomplete="off" /></div>';
+  }
+  return '<div class="place-row"><div class="place-box">'+inner+'</div>'+
+    '<div class="dropdown" id="dd_'+which+'" style="display:none"></div></div>';
+}
+
+// ---------- LOADING ----------
+function loadingHTML(){
+  return topbar()+
+    '<div class="loading"><div class="spinner"></div>'+
+    '<div style="font-size:18px;font-weight:800">'+esc(STATE.from.name)+' \u2192 '+esc(STATE.to.name)+'</div>'+
+    '<div style="font-size:13px;color:#6B7280;margin-top:6px">Finding real stations &amp; stops near you\u2026</div></div>';
+}
+
+// =====================================================================
+//  JOURNEY BUILDER — honest: no fake clock times, only honest windows
+// =====================================================================
+function buildJourneys(){
+  var from=STATE.from,to=STATE.to,avoid=STATE.avoid;
+  var crow=distKm(from,to), roadKm=crow*1.15;
+  var journeys=[];
+
+  var depAir=nearest(AIRPORTS,from), arrAir=nearest(AIRPORTS,to);
+  var depStn=nearest(STATIONS,from), arrStn=nearest(STATIONS,to);
+
+  // OSM-aware resolver: if Overpass found a real mapped station/stop closer
+  // to the point than our built-in list, prefer it. Falls back gracefully.
+  function bestRail(point,osm,fallback){
+    var fb=fallback&&fallback.item?{name:fallback.item.name,lat:fallback.item.lat,lng:fallback.item.lng,city:fallback.item.city,km:fallback.km}:null;
+    if(osm&&osm.rail&&osm.rail.length){
+      var n=nearest(osm.rail,point);
+      // use OSM stop only if it's a real, closer mapped station
+      if(n.item && (!fb || n.km < fb.km)){
+        return {name:n.item.name+' station',lat:n.item.lat,lng:n.item.lng,city:fb?fb.city:'',km:n.km,source:'osm'};
+      }
+    }
+    return fb?{name:fb.name,lat:fb.lat,lng:fb.lng,city:fb.city,km:fb.km,source:'list'}:null;
+  }
+  function bestBus(point,osm,fallback){
+    var fb=fallback&&fallback.item?{name:fallback.item.name,lat:fallback.item.lat,lng:fallback.item.lng,city:fallback.item.city,km:fallback.km}:null;
+    if(osm&&osm.bus&&osm.bus.length){
+      var n=nearest(osm.bus,point);
+      if(n.item && (!fb || n.km < fb.km)){
+        return {name:n.item.name,lat:n.item.lat,lng:n.item.lng,city:fb?fb.city:'',km:n.km,source:'osm'};
+      }
+    }
+    return fb?{name:fb.name+' bus stand',lat:fb.lat,lng:fb.lng,city:fb.city,km:fb.km,source:'list'}:null;
+  }
+
+  // ground access leg — cab or auto
+  function groundLeg(km,fromPt,toPt,timeWindow){
+    var useAuto = avoid.indexOf('cab')>=0 && avoid.indexOf('auto')<0;
+    if(avoid.indexOf('cab')>=0 && avoid.indexOf('auto')>=0) return null;
+    // baseEst is the SEDAN price; class multiplier adjusts from there
+    var baseEst = groundEstimate(km);
+    var classId = useAuto ? 'auto' : 'sedan';
+    return {
+      mode: useAuto?'auto':'cab',
+      provider: useAuto?'Auto (Rapido / Uber Auto)':'Cab (Uber / Ola)',
+      from:fromPt.name, to:toPt.name,
+      durMin:groundMins(km,!useAuto),
+      baseEst:baseEst, classKey:'cab', classId:classId,
+      estPrice: Math.round(baseEst*classMult('cab',classId)/10)*10,
+      timeNote:timeWindow,
+      fromPt:{lat:fromPt.lat,lng:fromPt.lng,name:fromPt.name},
+      toPt:{lat:toPt.lat,lng:toPt.lng,name:toPt.name},
+      book: useAuto?olaLink(fromPt,toPt):uberLink(fromPt,toPt),
+      bookLabel: useAuto?'Ola':'Uber'
+    };
+  }
+  function wait(mins,label){ return {mode:'wait',label:label,durMin:mins}; }
+
+  // ---- FLIGHT ----
+  if(avoid.indexOf('flight')<0 && crow>200 && depAir.item && arrAir.item && depAir.item.iata!==arrAir.item.iata){
+    var aFrom={name:depAir.item.name+' ('+depAir.item.iata+')',lat:depAir.item.lat,lng:depAir.item.lng};
+    var aTo={name:arrAir.item.name+' ('+arrAir.item.iata+')',lat:arrAir.item.lat,lng:arrAir.item.lng};
+    var pre=groundLeg(depAir.km,from,aFrom,'reach airport ~2h before departure');
+    var post=groundLeg(arrAir.km,aTo,to,'after you land');
+    if(pre&&post){
+      var fc=distKm(depAir.item,arrAir.item);
+      var flightMin=Math.round(fc/13+30);
+      var flightEst=Math.round((1600+fc*4.0)/50)*50;
+      var fl={mode:'flight',provider:'Flight ('+depAir.item.iata+' \u2192 '+arrAir.item.iata+')',
+        from:aFrom.name,to:aTo.name,durMin:flightMin,
+        baseEst:flightEst,classKey:'flight',classId:'eco',estPrice:flightEst,
+        timeNote:'multiple flights through the day',
+        depCity:depAir.item.city, arrCity:arrAir.item.city,
+        iataFrom:depAir.item.iata, iataTo:arrAir.item.iata,
+        book:skyscannerLink(depAir.item.iata,arrAir.item.iata),bookLabel:'Skyscanner'};
+      journeys.push(makeJourney('flight',[pre,wait(120,'Check-in & boarding'),fl,wait(25,'Deplane & exit'),post]));
+    }
+  }
+  // ---- TRAIN ----
+  if(avoid.indexOf('train')<0 && depStn.item && arrStn.item && depStn.item.code!==arrStn.item.code){
+    var railFrom=bestRail(from,STATE.osmFrom,depStn);
+    var railTo=bestRail(to,STATE.osmTo,arrStn);
+    var sFrom={name:railFrom.name,lat:railFrom.lat,lng:railFrom.lng};
+    var sTo={name:railTo.name,lat:railTo.lat,lng:railTo.lng};
+    var preT=groundLeg(railFrom.km,from,sFrom,'reach station ~30 min before');
+    var postT=groundLeg(railTo.km,sTo,to,'after you arrive');
+    if(preT&&postT){
+      var trEst=Math.round((550+roadKm*2.4)/50)*50;
+      // try REAL train data first (datameet/railways, CC0 official-source schedules)
+      var cityA=nearestTrainCity(from), cityB=nearestTrainCity(to);
+      var realTrains=null;
+      if(STATE.trainData && cityA && cityB && cityA!==cityB){
+        realTrains=STATE.trainData[cityA+'|'+cityB]||null;
+      }
+      var tr;
+      if(realTrains && realTrains.length){
+        // pick a sensible DEFAULT train: earliest departure at/after 05:00 (avoid pre-dawn),
+        // else just the earliest. The user can switch via dropdown on the detail page.
+        var pickIdx=0;
+        for(var ti=0; ti<realTrains.length; ti++){
+          if(realTrains[ti].dep && realTrains[ti].dep>='05:00'){ pickIdx=ti; break; }
+        }
+        var sel=realTrains[pickIdx];
+        var selDur=sel.durM || Math.round(roadKm/65*60+30);
+        tr={mode:'train',provider:sel.name+' (#'+sel.no+')',
+          from:sFrom.name,to:sTo.name,durMin:selDur,
+          baseEst:trEst,classKey:'train',classId:'2A',estPrice:trEst,
+          realTrains:realTrains, selTrain:pickIdx, trainCityA:cityA, trainCityB:cityB,
+          timeNote:'departs '+sel.dep+' \u00B7 '+realTrains.length+' trains on this route \u2014 change below',
+          book:irctcLink(),bookLabel:'IRCTC'};
+      } else {
+        // no dataset match — honest fallback (no invented times)
+        tr={mode:'train',provider:'Train ('+depStn.item.city+' \u2192 '+arrStn.item.city+')',
+          from:sFrom.name,to:sTo.name,durMin:Math.round(roadKm/65*60+30),timeUnknown:true,
+          baseEst:trEst,classKey:'train',classId:'2A',estPrice:trEst,
+          timeNote:'check IRCTC for trains, exact times & seats on this route',
+          book:irctcLink(),bookLabel:'IRCTC'};
+      }
+      journeys.push(makeJourney('train',[preT,wait(30,'Platform & boarding'),tr,wait(15,'Exit station'),postT]));
+    }
+  }
+  // ---- BUS ----
+  if(avoid.indexOf('bus')<0){
+    var busFromCity=(depStn.item&&depStn.item.city)||from.name;
+    var busToCity=(arrStn.item&&arrStn.item.city)||to.name;
+    if(busFromCity && busToCity && busFromCity!==busToCity){
+      // boarding/drop: prefer a real mapped bus station; if none, use rail; else built-in list
+      var bpFrom=bestBus(from,STATE.osmFrom,depStn) || bestRail(from,STATE.osmFrom,depStn);
+      var bpTo=bestBus(to,STATE.osmTo,arrStn) || bestRail(to,STATE.osmTo,arrStn);
+      var bFrom={name:bpFrom.name,lat:bpFrom.lat,lng:bpFrom.lng};
+      var bTo={name:bpTo.name,lat:bpTo.lat,lng:bpTo.lng};
+      var dropKm=bpTo.km;
+      var preB=groundLeg(distKm(from,bFrom),from,bFrom,'reach boarding point ~25 min before');
+      var postB=groundLeg(distKm(bTo,to),bTo,to,'from your nearest drop point');
+      if(preB&&postB){
+        var busMin=Math.round(roadKm/60*60+40);
+        var busEst=Math.round((350+roadKm*1.6)/50)*50;
+        var dropNote = dropKm>6
+          ? 'Tip: ask the operator to drop you at the stop nearest '+to.name+' \u2014 you may not need to ride to the main stand.'
+          : 'mostly overnight departures \u2014 check RedBus for live seats';
+        var bs={mode:'bus',provider:'Bus ('+busFromCity+' \u2192 '+busToCity+')',
+          from:bFrom.name,to:bTo.name,durMin:busMin,timeUnknown:true,
+          baseEst:busEst,classKey:'bus',classId:'sleeper',estPrice:busEst,
+          timeNote:dropNote,
+          busFromCity:busFromCity, busToCity:busToCity,
+          book:redbusLink(busFromCity,busToCity),bookLabel:'RedBus'};
+        journeys.push(makeJourney('bus',[preB,wait(25,'Boarding'),bs,wait(10,'Get off'),postB]));
+      }
+    }
+  }
+  return journeys;
+}
+function makeJourney(primaryMode,legs){
+  var j={primaryMode:primaryMode,legs:legs};
+  j.totalMin=legs.reduce(function(s,l){return s+l.durMin;},0);
+  j.transitMin=legs.filter(function(l){return l.mode==='wait';}).reduce(function(s,l){return s+l.durMin;},0);
+  j.movingMin=j.totalMin-j.transitMin;
+  j.estPrice=legs.reduce(function(s,l){return s+(l.estPrice||0);},0);
+  // honest flag: if any leg's exact duration is not knowable from free data
+  j.timeUnknown=legs.some(function(l){return l.timeUnknown;});
+  return j;
+}
+
+// ---------- RESULTS ----------
+function resultsHTML(){
+  var js=STATE.journeys;
+  var head=topbar()+
+    '<div class="results-head"><div class="results-head-in">'+
+    '<button class="back-link" id="editSearch">\u2190 Edit search</button>'+
+    '<div class="route-title">'+esc(STATE.from.name)+' \u2192 '+esc(STATE.to.name)+'</div>'+
+    '<div class="route-sub">'+dateLabel()+' \u00B7 '+STATE.pax+(STATE.pax===1?' traveller':' travellers')+
+      (STATE.avoid.length?' \u00B7 avoiding '+STATE.avoid.join(', '):'')+
+      ' \u00B7 '+js.length+' ways to go</div></div></div>';
+
+  if(!js.length){
+    return head+'<div class="results-wrap"><div class="empty">'+
+      '<div style="font-size:15px;font-weight:700">No journeys found</div>'+
+      '<div style="font-size:13px;color:#6B7280;margin-top:4px">Try removing some avoided modes, or pick a different destination.</div>'+
+      '</div></div>';
+  }
+  function pick(key){
+    var a=js.slice();
+    if(key==='cheapest') a.sort(function(x,y){return x.estPrice-y.estPrice;});
+    else if(key==='fastest') a.sort(function(x,y){return x.totalMin-y.totalMin;});
+    else a.sort(function(x,y){return (x.estPrice+x.totalMin*14)-(y.estPrice+y.totalMin*14);});
+    return a[0];
+  }
+  var tabs=['best','cheapest','fastest'].map(function(k){
+    var j=pick(k),label=k.charAt(0).toUpperCase()+k.slice(1);
+    return '<button class="tab'+(STATE.sort===k?' active':'')+'" data-sort="'+k+'">'+
+      '<div class="tab-label">'+label+'</div>'+
+      '<div class="tab-price">'+rangeStr(j.estPrice)+'</div>'+
+      '<div class="tab-dur">'+MODE_GLYPH[j.primaryMode]+' '+(j.timeUnknown?'see times':durFmt(j.totalMin))+'</div></button>';
+  }).join('');
+  var sorted=js.slice();
+  if(STATE.sort==='cheapest') sorted.sort(function(x,y){return x.estPrice-y.estPrice;});
+  else if(STATE.sort==='fastest') sorted.sort(function(x,y){return x.totalMin-y.totalMin;});
+  else sorted.sort(function(x,y){return (x.estPrice+x.totalMin*14)-(y.estPrice+y.totalMin*14);});
+
+  var note='<div class="honesty-note">\uD83D\uDCA1 Costs shown are <b>rough estimates</b> for comparison. Exact <b>timings, live prices and seats</b> are on the partner \u2014 tap any option and check Skyscanner / IRCTC / RedBus. We don\u2019t show invented departure times.</div>';
+  return head+'<div class="results-wrap">'+note+'<div class="tabs">'+tabs+'</div>'+
+    sorted.map(function(j,i){return journeyCard(j,i);}).join('')+'</div>';
+}
+function journeyCard(j,idx){
+  var moving=j.legs.filter(function(l){return l.mode!=='wait';});
+  var totalMoving=moving.reduce(function(s,l){return s+l.durMin;},0);
+  var tagLabel={flight:'Usually fastest',train:'Comfortable',bus:'Usually cheapest'}[j.primaryMode];
+  var ribbon=moving.map(function(l,i){
+    var pct=Math.max(12,(l.durMin/totalMoving)*100);
+    var radius=i===0?'7px 2px 2px 7px':(i===moving.length-1?'2px 7px 7px 2px':'2px');
+    return '<div class="rib" style="width:'+pct+'%;background:'+MODE_COLOR[l.mode]+';border-radius:'+radius+'">'+
+      MODE_GLYPH[l.mode]+(pct>26?(' '+durFmt(l.durMin)):'')+'</div>';
+  }).join('');
+  var legRows=j.legs.map(function(l){
+    if(l.mode==='wait'){
+      return '<div class="wait-leg"><div class="wait-bar"></div><div class="wait-txt">'+esc(l.label)+' \u00B7 '+durFmt(l.durMin)+'</div></div>';
+    }
+    return '<div class="leg"><div class="leg-ic" style="background:'+MODE_COLOR[l.mode]+'">'+MODE_GLYPH[l.mode]+'</div>'+
+      '<div class="leg-txt">'+esc(l.provider)+' <span class="leg-from">\u00B7 '+esc(l.from)+' \u2192 '+esc(l.to)+'</span></div>'+
+      '<div class="leg-dur">'+(l.timeUnknown?'see partner':'~'+durFmt(l.durMin))+'</div></div>';
+  }).join('');
+  return '<div class="jcard"><div class="jhead">'+
+    '<div><div class="jmode">'+
+      '<div class="jmode-ic" style="background:'+MODE_COLOR[j.primaryMode]+'">'+MODE_GLYPH[j.primaryMode]+'</div>'+
+      '<div class="jmode-name">'+(j.primaryMode==='flight'?'By flight':(j.primaryMode==='train'?'By train':'By bus'))+'</div>'+
+      '<div class="jtag">'+tagLabel+'</div></div>'+
+      '<div class="jtime">'+(j.timeUnknown?'Exact duration shown on '+(j.primaryMode==='train'?'IRCTC':'RedBus'):'Estimated journey '+durRange(j.totalMin))+'</div></div>'+
+    '<div><div class="jprice">'+rangeStr(j.estPrice)+'</div><div class="jprice-sub">est. cost \u00B7 all-in</div></div>'+
+    '</div><div class="ribbon">'+ribbon+'</div>'+
+    '<div class="jstats">'+
+      (j.timeUnknown
+        ? stat('Total journey','check '+(j.primaryMode==='train'?'IRCTC':'RedBus')+' for exact time','#B45309')
+        : stat('Est. total time','~'+durFmt(j.totalMin),'#0B0F19'))+
+      stat('Your cab legs','~'+durFmt(j.legs.filter(function(l){return l.mode==='cab'||l.mode==='auto';}).reduce(function(s,l){return s+l.durMin;},0)),'#0B0F19')+
+      stat('Waiting / boarding','~'+durFmt(j.transitMin),'#B45309')+
+    '</div><div class="legs">'+legRows+'</div>'+
+    '<button class="cta" data-detail="'+idx+'" style="margin-top:13px;font-size:13.5px;padding:11px">See details &amp; book \u2192</button></div>';
+}
+function stat(label,val,color){
+  return '<div><div class="stat-label">'+label+'</div><div class="stat-val" style="color:'+color+'">'+val+'</div></div>';
+}
+
+// ---------- DETAIL ----------
+function detailHTML(){
+  var j=STATE.detailJourney;
+  var moving=j.legs.filter(function(l){return l.mode!=='wait';});
+  var legRows=j.legs.map(function(l,legIdx){
+    if(l.mode==='wait'){
+      return '<div style="display:flex;gap:12px;margin-bottom:10px">'+
+        '<div style="width:40px;display:flex;justify-content:center"><div style="width:2px;min-height:34px;background:#E2C9A0"></div></div>'+
+        '<div style="flex:1;display:flex;align-items:center;gap:8px;background:#FFF8EC;border:1px dashed #E2C9A0;border-radius:10px;padding:10px 14px">'+
+        '\u23F3 <span style="font-size:12.5px;color:#92500C;font-weight:600">'+esc(l.label)+'</span>'+
+        '<span style="font-size:12px;color:#B45309;margin-left:auto">~'+durFmt(l.durMin)+'</span></div></div>';
+    }
+    return '<div style="display:flex;gap:12px;margin-bottom:10px">'+
+      '<div style="display:flex;flex-direction:column;align-items:center;width:40px;padding-top:3px">'+
+        '<div class="leg-ic" style="width:34px;height:34px;border-radius:99px;background:'+MODE_COLOR[l.mode]+';font-size:14px">'+MODE_GLYPH[l.mode]+'</div></div>'+
+      '<div style="flex:1;background:#fff;border:1px solid #E6E8EB;border-radius:12px;padding:14px">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+          '<div><div style="font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:'+MODE_COLOR[l.mode]+'">'+
+            l.mode+(l.timeUnknown?' \u00B7 see '+esc(l.bookLabel)+' for time':' \u00B7 ~'+durFmt(l.durMin))+'</div>'+
+            '<div style="font-size:15px;font-weight:700;margin-top:2px">'+esc(l.provider)+'</div>'+
+            (l.timeNote?'<div style="font-size:12px;color:#6B7280;margin-top:1px">'+esc(l.timeNote)+'</div>':'')+
+          '</div>'+
+          '<div style="text-align:right"><div style="font-size:14px;font-weight:800">'+rangeStr(l.estPrice)+'</div>'+
+          '<div style="font-size:10px;color:#9AA1AB">estimate</div></div></div>'+
+        '<div style="margin-top:10px;font-size:12.5px;color:#374151">\u25CF '+esc(l.from)+'</div>'+
+        '<div style="margin-top:4px;font-size:12.5px;color:#374151">\u25C6 '+esc(l.to)+'</div>'+
+        (l.realTrains&&l.realTrains.length?
+          (function(){
+            var sel=l.realTrains[l.selTrain||0];
+            var selDur=sel.durM?(Math.floor(sel.durM/60)+'h '+String(sel.durM%60).padStart(2,'0')+'m'):'';
+            return '<div style="margin-top:12px;border-top:1px solid #EEF0F2;padding-top:10px">'+
+              '<div style="font-size:11px;font-weight:700;color:#15803D;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px">Your train</div>'+
+              '<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:10px 12px;margin-bottom:8px">'+
+                '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+
+                  '<div><div style="font-size:13.5px;font-weight:800;color:#0B0F19">'+esc(sel.name)+'</div>'+
+                  '<div style="font-size:11px;color:#15803D">#'+esc(sel.no)+(selDur?' \u00B7 ~'+selDur:'')+'</div></div>'+
+                  '<div style="text-align:right"><div style="font-size:13px;font-weight:800">'+(sel.dep||'\u2014')+' \u2192 '+(sel.arr||'\u2014')+'</div>'+
+                  '<div style="font-size:10px;color:#9AA1AB">scheduled dep \u2192 arr</div></div>'+
+                '</div>'+
+              '</div>'+
+              '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+                '<span style="font-size:11px;font-weight:700;color:#9AA1AB;text-transform:uppercase;letter-spacing:0.04em">Change train</span>'+
+                '<select class="leg-train" data-leg="'+legIdx+'" style="border:1px solid #D7DBE0;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:600;color:#0B0F19;background:#fff;max-width:260px">'+
+                  l.realTrains.map(function(t,ti){
+                    var dt=t.durM?(' ('+Math.floor(t.durM/60)+'h'+String(t.durM%60).padStart(2,'0')+')'):'';
+                    return '<option value="'+ti+'"'+(ti===(l.selTrain||0)?' selected':'')+'>'+esc(t.dep||'--')+' '+esc(t.name)+dt+'</option>';
+                  }).join('')+
+                '</select>'+
+              '</div>'+
+              '<div style="font-size:10.5px;color:#9AA1AB;margin-top:8px;font-style:italic">Schedule from public records (2023) \u2014 confirm exact times &amp; seats on IRCTC.</div>'+
+            '</div>';
+          })()
+        :'')+
+        (l.classKey&&CLASS_OPTIONS[l.classKey]?
+          '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+
+            '<span style="font-size:11px;font-weight:700;color:#9AA1AB;text-transform:uppercase;letter-spacing:0.04em">'+
+              (l.classKey==='cab'?'Vehicle type':(l.classKey==='train'?'Coach class':(l.classKey==='bus'?'Bus type':'Cabin')))+
+            '</span>'+
+            '<select class="leg-class" data-leg="'+legIdx+'" style="border:1px solid #D7DBE0;border-radius:8px;padding:5px 8px;font-size:12.5px;font-weight:600;color:#0B0F19;background:#fff">'+
+              CLASS_OPTIONS[l.classKey].map(function(o){return '<option value="'+o.id+'"'+(o.id===l.classId?' selected':'')+'>'+esc(o.label)+'</option>';}).join('')+
+            '</select>'+
+          '</div>'
+        :'')+
+        '<a href="'+(l.book||'#')+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:12.5px;font-weight:700;color:#fff;background:#0B0F19;padding:8px 14px;border-radius:7px;text-decoration:none">'+
+          'See live prices &amp; book on '+esc(l.bookLabel)+' \u2197</a>'+
+      '</div></div>';
+  }).join('');
+  return topbar()+
+    '<div style="max-width:720px;margin:0 auto;padding:20px 16px 40px">'+
+      '<button class="back-link" id="backResults">\u2190 Back to all options</button>'+
+      '<div style="background:#fff;border:1px solid #E6E8EB;border-radius:18px;padding:20px;margin-bottom:14px">'+
+        '<div style="font-size:11px;font-weight:700;letter-spacing:0.06em;color:#6B7280;text-transform:uppercase">Your door-to-door plan</div>'+
+        '<div style="font-size:21px;font-weight:800;margin-top:4px">'+esc(STATE.from.name)+' \u2192 '+esc(STATE.to.name)+'</div>'+
+        '<div style="font-size:13px;color:#6B7280;margin-top:2px">'+dateLabel()+(j.timeUnknown?' \u00B7 see partners for exact journey time':' \u00B7 estimated journey '+durRange(j.totalMin))+'</div>'+
+        '<div style="display:flex;gap:18px;margin-top:14px;flex-wrap:wrap">'+
+          stat('Est. all-in cost',rangeStr(j.estPrice),'#0B0F19')+
+          (j.timeUnknown
+            ? stat('Total time','on '+(j.primaryMode==='train'?'IRCTC':'RedBus'),'#B45309')
+            : stat('Est. total time','~'+durFmt(j.totalMin),'#0B0F19'))+
+          stat('Waiting / boarding','~'+durFmt(j.transitMin),'#B45309')+
+        '</div>'+
+      '</div>'+
+      '<div class="honesty-note">These are planning estimates. Exact timings, live prices and seat availability are shown when you tap through to each partner below.</div>'+
+      legRows+
+    '</div>';
+}
+
+// =====================================================================
+//  WIRING
+// =====================================================================
+function wire(){
+  if(STATE.screen==='search') wireSearch();
+  if(STATE.screen==='results') wireResults();
+  if(STATE.screen==='detail') wireDetail();
+}
+function wireSearch(){
+  ['from','to'].forEach(function(which){
+    var input=document.getElementById('input_'+which);
+    var dd=document.getElementById('dd_'+which);
+    if(!input) return;
+    function showGps(msg){
+      dd.innerHTML='<button class="gps-btn" data-gps="'+which+'"><div class="gps-ic">\uD83D\uDCCD</div>'+
+        '<div><div class="sug-name">Use my current location</div><div class="sug-sub">Detect where you are with GPS</div></div></button>'+
+        '<div class="dd-msg">'+msg+'</div>';
+      dd.style.display='block'; bindGps(dd,which);
+    }
+    input.addEventListener('focus',function(){ if(input.value.trim().length<3) showGps('Start typing a building, street or area\u2026'); });
+    input.addEventListener('input',function(){
+      var q=input.value.trim();
+      if(q.length<3){ showGps('Type at least 3 letters to search\u2026'); return; }
+      dd.style.display='block';
+      dd.innerHTML='<div class="dd-msg"><span class="dd-spinner"></span>Searching real places\u2026</div>';
+      liveSearch(q,function(places){
+        if(places===null){ dd.innerHTML='<div class="dd-msg">Couldn\u2019t reach the location service. Check your internet.</div>'; return; }
+        if(!places.length){ dd.innerHTML='<div class="dd-msg">No places found for \u201C'+esc(q)+'\u201D. Try a nearby landmark or area name.</div>'; return; }
+        dd.innerHTML=places.map(function(p,i){
+          return '<button class="sug" data-pick="'+which+'" data-idx="'+i+'"><div class="sug-ic">\uD83D\uDCCD</div>'+
+            '<div><div class="sug-name">'+esc(p.name)+'</div><div class="sug-sub">'+esc(p.sub)+'</div></div></button>';
+        }).join('');
+        dd.querySelectorAll('[data-pick]').forEach(function(btn){
+          btn.addEventListener('click',function(){ STATE[which]=places[+btn.getAttribute('data-idx')]; render(); });
+        });
+      });
+    });
+  });
+  document.addEventListener('click',function(e){
+    document.querySelectorAll('.dropdown').forEach(function(dd){
+      var row=dd.closest('.place-row');
+      if(row && !row.contains(e.target)) dd.style.display='none';
+    });
+  });
+  document.querySelectorAll('[data-clear]').forEach(function(b){
+    b.addEventListener('click',function(){ STATE[b.getAttribute('data-clear')]=null; render(); });
+  });
+  var sw=document.getElementById('swapBtn');
+  if(sw) sw.addEventListener('click',function(){ var t=STATE.from; STATE.from=STATE.to; STATE.to=t; render(); });
+  var ds=document.getElementById('dateSel');
+  if(ds) ds.addEventListener('change',function(){
+    var wrap=document.getElementById('datePickWrap');
+    var di=document.getElementById('dateInput');
+    if(ds.value==='pick'){
+      if(wrap) wrap.style.display='block';
+      // default the picker to tomorrow if empty
+      if(di && !di.value){
+        var t=new Date(); t.setDate(t.getDate()+1);
+        di.value=t.toISOString().slice(0,10);
+        STATE.date=di.value;
+      } else if(di){ STATE.date=di.value; }
+    } else {
+      if(wrap) wrap.style.display='none';
+      STATE.date=ds.value;
+    }
+  });
+  var di=document.getElementById('dateInput');
+  if(di) di.addEventListener('change',function(){ if(di.value) STATE.date=di.value; });
+  var ps=document.getElementById('paxSel'); if(ps) ps.addEventListener('change',function(){STATE.pax=+ps.value;});
+  document.querySelectorAll('[data-avoid]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var m=b.getAttribute('data-avoid'),i=STATE.avoid.indexOf(m);
+      if(i>=0) STATE.avoid.splice(i,1); else STATE.avoid.push(m);
+      render();
+    });
+  });
+  document.querySelectorAll('[data-pop]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var routes={
+        blrgoa:    [{name:'Bengaluru',sub:'Karnataka',lat:12.9716,lng:77.5946},{name:'Panaji',sub:'Goa',lat:15.4909,lng:73.8278}],
+        delmanali: [{name:'New Delhi',sub:'Delhi',lat:28.6139,lng:77.2090},{name:'Manali',sub:'Himachal Pradesh',lat:32.2432,lng:77.1892}],
+        mumpune:   [{name:'Mumbai',sub:'Maharashtra',lat:19.0760,lng:72.8777},{name:'Pune',sub:'Maharashtra',lat:18.5204,lng:73.8567}],
+        blrchennai:[{name:'Bengaluru',sub:'Karnataka',lat:12.9716,lng:77.5946},{name:'Chennai',sub:'Tamil Nadu',lat:13.0827,lng:80.2707}],
+        deljaipur: [{name:'New Delhi',sub:'Delhi',lat:28.6139,lng:77.2090},{name:'Jaipur',sub:'Rajasthan',lat:26.9124,lng:75.7873}]
+      };
+      var r=routes[b.getAttribute('data-pop')];
+      if(r){ STATE.from=r[0]; STATE.to=r[1]; render(); }
+    });
+  });
+  var go=document.getElementById('searchBtn');
+  if(go) go.addEventListener('click',function(){
+    var eb=document.getElementById('errBox');
+    if(!STATE.from||!STATE.to){ eb.innerHTML='<div class="err">Please choose where you\u2019re starting from and where you\u2019re going.</div>'; return; }
+    if(distKm(STATE.from,STATE.to)<3){ eb.innerHTML='<div class="err">Origin and destination are basically the same place.</div>'; return; }
+    STATE.screen='loading'; render();
+    // fetch REAL transit stops near both ends (free OSM Overpass), then build.
+    STATE.osmFrom=null; STATE.osmTo=null;
+    var built=false;
+    function buildOnce(){
+      if(built) return; built=true;
+      STATE.journeys=buildJourneys();
+      STATE.sort='best'; STATE.screen='results'; render();
+    }
+    var done=0;
+    function finish(){ done++; if(done>=2) buildOnce(); }
+    overpassTransit(STATE.from.lat,STATE.from.lng,6000,function(res){ STATE.osmFrom=res; finish(); });
+    overpassTransit(STATE.to.lat,STATE.to.lng,6000,function(res){ STATE.osmTo=res; finish(); });
+    // safety: if Overpass is very slow, build anyway after 9s
+    setTimeout(function(){ if(STATE.screen==='loading') buildOnce(); },9000);
+  });
+}
+function bindGps(dd,which){
+  var gps=dd.querySelector('[data-gps]');
+  if(!gps) return;
+  gps.addEventListener('click',function(){
+    if(!navigator.geolocation){ gps.querySelector('.sug-sub').textContent='GPS not supported here.'; return; }
+    gps.querySelector('.sug-name').textContent='Locating you\u2026';
+    gps.querySelector('.sug-sub').textContent='Please allow location access';
+    navigator.geolocation.getCurrentPosition(
+      function(pos){ reverseGeocode(pos.coords.latitude,pos.coords.longitude,function(place){ STATE[which]=place; render(); }); },
+      function(err){
+        gps.querySelector('.sug-name').textContent='Use my current location';
+        gps.querySelector('.sug-sub').textContent=(err.code===1)?'Permission denied \u2014 type it instead.':'Couldn\u2019t get GPS \u2014 type it instead.';
+      },
+      {enableHighAccuracy:true,timeout:10000}
+    );
+  });
+}
+function wireResults(){
+  var es=document.getElementById('editSearch');
+  if(es) es.addEventListener('click',function(){ STATE.screen='search'; render(); });
+  document.querySelectorAll('[data-sort]').forEach(function(b){
+    b.addEventListener('click',function(){ STATE.sort=b.getAttribute('data-sort'); render(); });
+  });
+  document.querySelectorAll('[data-detail]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var sorted=STATE.journeys.slice();
+      if(STATE.sort==='cheapest') sorted.sort(function(x,y){return x.estPrice-y.estPrice;});
+      else if(STATE.sort==='fastest') sorted.sort(function(x,y){return x.totalMin-y.totalMin;});
+      else sorted.sort(function(x,y){return (x.estPrice+x.totalMin*14)-(y.estPrice+y.totalMin*14);});
+      STATE.detailJourney=sorted[+b.getAttribute('data-detail')];
+      STATE.screen='detail'; render();
+    });
+  });
+}
+function wireDetail(){
+  var b=document.getElementById('backResults');
+  if(b) b.addEventListener('click',function(){ STATE.screen='results'; render(); });
+  document.querySelectorAll('.leg-class').forEach(function(sel){
+    sel.addEventListener('change',function(){
+      var j=STATE.detailJourney;
+      var leg=j.legs[+sel.getAttribute('data-leg')];
+      if(!leg) return;
+      leg.classId=sel.value;
+      // keep cab/auto provider + booking link sensible when switching to/from Auto
+      if(leg.classKey==='cab'){
+        if(leg.classId==='auto'){ leg.mode='auto'; leg.provider='Auto (Rapido / Uber Auto)'; leg.bookLabel='Ola'; if(leg.fromPt&&leg.toPt) leg.book=olaLink(leg.fromPt,leg.toPt); }
+        else { leg.mode='cab'; leg.provider='Cab (Uber / Ola)'; leg.bookLabel='Uber'; if(leg.fromPt&&leg.toPt) leg.book=uberLink(leg.fromPt,leg.toPt); }
+      }
+      recalcJourney(j);
+      render();
+    });
+  });
+  document.querySelectorAll('.leg-train').forEach(function(sel){
+    sel.addEventListener('change',function(){
+      var j=STATE.detailJourney;
+      var leg=j.legs[+sel.getAttribute('data-leg')];
+      if(!leg || !leg.realTrains) return;
+      var idx=+sel.value;
+      leg.selTrain=idx;
+      var t=leg.realTrains[idx];
+      leg.durMin = t.durM || leg.durMin;
+      leg.provider = t.name+' (#'+t.no+')';
+      leg.timeNote = 'departs '+t.dep+' \u00B7 '+leg.realTrains.length+' trains on this route \u2014 change above';
+      recalcJourney(j);
+      render();
+    });
+  });
+}
+
+loadTrainData();
+render();
+</script>
+</body>
+</html>
